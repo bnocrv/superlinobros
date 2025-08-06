@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Super Lino BROS</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="gameContainer">
+    <canvas id="gameCanvas" width="800" height="400"></canvas>
+    <div id="score">🪙 0</div>
+
+    <div id="gameOverScreen" class="hidden">
+      <h1>Game Over</h1>
+      <p>Você fez <span id="finalScore">0</span> pontos!</p>
+
+      <!-- Ranking aparece aqui -->
+      <div id="highScores"></div>
+
+      <button id="restartButton">Recomeçar</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
