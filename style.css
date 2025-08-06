@@ -82,4 +82,8 @@ body {
   box-shadow: 0 0 5px #ff0;
 }
 
-
+#score img {
+  display: inline !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}

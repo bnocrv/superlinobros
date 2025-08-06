@@ -4,6 +4,61 @@
   <meta charset="UTF-8" />
   <title>Super Lino BROS</title>
   <link rel="stylesheet" href="style.css" />
+  <style>
+    /* Apenas para garantir que o #gameOverScreen esconda quando tiver a classe hidden */
+    .hidden {
+      display: none;
+    }
+    #gameContainer {
+      position: relative;
+      width: 800px;
+      margin: auto;
+    }
+    #score {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      font-size: 24px;
+      font-weight: bold;
+      color: #fff;
+      text-shadow: 1px 1px 2px black;
+      user-select: none;
+    }
+    #gameOverScreen {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 100%;
+      max-width: 400px;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.8);
+      color: white;
+      padding: 20px;
+      text-align: center;
+      border-radius: 10px;
+      user-select: none;
+    }
+    #highScores {
+      margin-top: 15px;
+      text-align: left;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    #restartButton {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 18px;
+      cursor: pointer;
+      border: none;
+      background: #28a745;
+      color: white;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+    }
+    #restartButton:hover {
+      background: #218838;
+    }
+  </style>
 </head>
 <body>
   <div id="gameContainer">
@@ -14,13 +69,15 @@
       <h1>Game Over</h1>
       <p>Você fez <span id="finalScore">0</span> pontos!</p>
 
-      <!-- Ranking aparece aqui -->
-      <div id="highScores"></div>
+      <div id="highScores">
+        <!-- Ranking vai aparecer aqui -->
+      </div>
 
       <button id="restartButton">Recomeçar</button>
     </div>
   </div>
 
-  <script src="script.js"></script>
+  <!-- Importa o script como módulo para usar import do Firebase -->
+  <script type="module" src="script.js"></script>
 </body>
 </html>
