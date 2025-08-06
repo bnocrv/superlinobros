@@ -10,7 +10,7 @@ import {
   addDoc,
 } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
-// Firebase config (use seu próprio config aqui)
+// Firebase config (substitua pelo seu próprio config)
 const firebaseConfig = {
   apiKey: "AIzaSyDtTJI8yOlIMxR_EYC-2JpoBUlwStgaORA",
   authDomain: "lino-s-world.firebaseapp.com",
@@ -25,56 +25,55 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// ====== JOGO =======
-const canvas = document.getElementById("gameCanvas");
+// ====== ELEMENTOS DOM =======
+const startScreen = document.getElementById("startScreen");
+const startButton = document.getElementById("startButton");
+const gameCanvas = document.getElementById("gameCanvas");
+const scoreDisplay = document.getElementById("score");
+const gameOverScreen = document.getElementById("gameOverScreen");
+const restartButton = document.getElementById("restartButton");
+
+const canvas = gameCanvas;
 const ctx = canvas.getContext("2d");
 
+// ====== CONSTANTES DO JOGO =======
 const GRAVITY = 0.6;
 const JUMP_FORCE = -14;
 const GROUND_Y = canvas.height - 70;
 
-// Animações
+// ====== IMAGENS =======
 const runFrames = [];
 for (let i = 1; i <= 6; i++) {
   const img = new Image();
   img.src = `img/corpo_run${i}.png`;
   runFrames.push(img);
 }
-
 const jumpSprite = new Image();
 jumpSprite.src = "img/corpo_jump.png";
-
 const rosto = new Image();
 rosto.src = "img/rosto.png";
-
 const chao = new Image();
 chao.src = "img/chao.png";
-
 const fundo = new Image();
 fundo.src = "img/fundo.png";
-
 const moedaImg = new Image();
 moedaImg.src = "img/moeda.png";
-
 const obstaculoChaoImg = new Image();
 obstaculoChaoImg.src = "img/obstaculo.png";
-
 const obstaculoVoadorImg = new Image();
 obstaculoVoadorImg.src = "img/obstaculo_voador.png";
-
 const obstaculoPosteImg = new Image();
 obstaculoPosteImg.src = "img/obstaculo_poste.png";
 
-// Sons
+// ====== SONS =======
 const soundTheme = new Audio("audio/theme.wav");
 soundTheme.loop = true;
 soundTheme.volume = 0.1;
-
 const soundJump = new Audio("audio/jump.ogg");
 const soundDie = new Audio("audio/die.ogg");
 const soundPowerup = new Audio("audio/powerup.ogg");
 
-// Jogador
+// ====== ESTADO DO JOGADOR =======
 const player = {
   x: 100,
   y: GROUND_Y - 92,
@@ -94,27 +93,22 @@ const player = {
   visible: true,
 };
 
+// ====== VARIÁVEIS DE JOGO =======
 let score = 0;
 let gameOver = false;
 let gameSpeed = 4;
 let chaoOffset = 0;
-
 let obstacles = [];
 let coins = [];
-
 let obstacleTimer = 0;
 let coinTimer = 0;
-
 let powerupTimer = 0;
 let blinkTimer = 0;
-
 const powerupDuration = 5000;
 const blinkInterval = 200;
-
-// High Scores: Array carregado do Firebase
 let highScores = [];
 
-// ====== FUNÇÕES FIRESTORE ======
+// ====== FUNÇÕES FIRESTORE =======
 
 async function fetchHighScores() {
   const scoresRef = collection(db, "highscores");
@@ -160,7 +154,7 @@ function displayHighScores() {
   `;
 }
 
-// Segurança simples para evitar XSS
+// Segurança básica contra XSS
 function escapeHTML(str) {
   return str.replace(/[&<>"']/g, (m) => {
     switch (m) {
@@ -180,7 +174,9 @@ function escapeHTML(str) {
   });
 }
 
-// Obstáculos
+// ====== FUNÇÕES DE GAMEPLAY =======
+
+// Gera obstáculo aleatório
 function spawnObstacle() {
   const tipo = Math.random();
 
@@ -211,7 +207,7 @@ function spawnObstacle() {
   }
 }
 
-// Moedas
+// Checa se a moeda está muito próxima de obstáculo para spawnar
 function isCoinTooCloseToObstacle(x, y, width, height) {
   const minDistX = 80;
 
@@ -225,6 +221,7 @@ function isCoinTooCloseToObstacle(x, y, width, height) {
   return false;
 }
 
+// Gera moeda em posição válida
 function spawnCoin() {
   const minY = GROUND_Y - 180;
   const maxY = GROUND_Y - 100;
@@ -242,7 +239,7 @@ function spawnCoin() {
   coins.push({ x, y, width: coinWidth, height: coinHeight });
 }
 
-// Atualização do jogo
+// Atualiza estado do jogo
 function update(deltaTime) {
   if (gameOver) return;
 
@@ -255,6 +252,7 @@ function update(deltaTime) {
     player.jumping = false;
   }
 
+  // Animação corrida
   if (!player.jumping) {
     player.frameDelay--;
     if (player.frameDelay <= 0) {
@@ -265,34 +263,38 @@ function update(deltaTime) {
     player.frame = 0;
   }
 
+  // Movimenta obstáculos e moedas
   obstacles.forEach((o) => (o.x -= gameSpeed));
   coins.forEach((c) => (c.x -= gameSpeed));
 
+  // Remove offscreen
   obstacles = obstacles.filter((o) => o.x + o.width > 0);
   coins = coins.filter((c) => c.x + c.width > 0);
 
+  // Checa colisões com obstáculos
   for (let o of obstacles) {
     if (!player.invincible && checkCollision(player, o)) {
       endGame();
     }
   }
 
+  // Checa colisão com moedas
   coins.forEach((coin, i) => {
     if (checkCollision(player, coin)) {
       score++;
-      document.getElementById("score").innerText = `🪙 ${score}`;
+      scoreDisplay.innerText = `🪙 ${score}`;
       coins.splice(i, 1);
 
       if (score % 10 === 0) {
         gameSpeed += 0.5;
       }
-
       if (score % 30 === 0) {
         activatePowerup();
       }
     }
   });
 
+  // Powerup invencível e piscar do jogador
   if (player.invincible) {
     powerupTimer += deltaTime;
     blinkTimer += deltaTime;
@@ -324,14 +326,14 @@ function update(deltaTime) {
   }
 }
 
-// Desenho
+// Desenha tudo no canvas
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   // Fundo
   ctx.drawImage(fundo, 0, 0, canvas.width, canvas.height);
 
-  // Chão (scroll)
+  // Chão com scroll infinito
   chaoOffset -= gameSpeed;
   if (chaoOffset <= -canvas.width) chaoOffset = 0;
   ctx.drawImage(chao, chaoOffset, GROUND_Y, canvas.width, 70);
@@ -347,7 +349,7 @@ function draw() {
     ctx.drawImage(o.image, o.x, o.y, o.width, o.height);
   });
 
-  // Jogador
+  // Jogador (visível ou invisível no powerup)
   if (player.visible) {
     if (player.jumping) {
       ctx.drawImage(jumpSprite, player.x, player.y, player.width, player.height);
@@ -360,7 +362,7 @@ function draw() {
   ctx.drawImage(rosto, 10, 10, 40, 40);
 }
 
-// Verifica colisão
+// Checa colisão entre dois objetos
 function checkCollision(a, b) {
   const aX = a.x + a.hitbox.offsetX;
   const aY = a.y + a.hitbox.offsetY;
@@ -380,7 +382,7 @@ function checkCollision(a, b) {
   );
 }
 
-// Pulo
+// Função de pulo
 function jump() {
   if (!player.jumping) {
     player.vy = JUMP_FORCE;
@@ -389,7 +391,7 @@ function jump() {
   }
 }
 
-// Powerup invencível
+// Ativa powerup invencibilidade
 function activatePowerup() {
   player.invincible = true;
   powerupTimer = 0;
@@ -398,96 +400,71 @@ function activatePowerup() {
   soundTheme.playbackRate = 1.5;
 }
 
-// Finaliza o jogo
+// Finaliza jogo
 async function endGame() {
   gameOver = true;
   soundDie.play();
   soundTheme.pause();
 
   document.getElementById("finalScore").innerText = score;
-  document.getElementById("gameOverScreen").classList.remove("hidden");
+  gameOverScreen.classList.remove("hidden");
 
-await fetchHighScores();
+  await fetchHighScores();
 
+  // Checa se entrou no top 5
+  const lowestHighScore = highScores.length < 5 ? 0 : highScores[highScores.length - 1].score;
 
-// Verifica se a pontuação é alta o suficiente para entrar no top 5
-const lowestHighScore = highScores.length < 5 ? 0 : highScores[highScores.length - 1].score;
+  if (score > lowestHighScore || highScores.length < 5) {
+    let playerName = prompt("Parabéns! Você entrou no Top 5! Digite seu nome:", "Lino");
+    if (!playerName) playerName = "Anônimo";
 
-if (score > lowestHighScore || highScores.length < 5) {
-  let playerName = prompt("Parabéns! Você entrou no Top 5! Digite seu nome:", "Lino");
-  if (!playerName) playerName = "Anônimo";
-
-  await addHighScore(playerName, score);
-}
-
+    await addHighScore(playerName, score);
+  }
 
   // Atualiza ranking na tela
   await fetchHighScores();
 }
 
-// Reinicia o jogo
-function restartGame() {
-  score = 0;
-  gameSpeed = 4;
-  obstacles = [];
-  coins = [];
-  gameOver = false;
-  player.y = GROUND_Y - player.height;
-  player.vy = 0;
-  player.jumping = false;
-  player.invincible = false;
-  player.visible = true;
-
-  document.getElementById("score").innerText = `🪙 ${score}`;
-  document.getElementById("gameOverScreen").classList.add("hidden");
-
-  soundTheme.currentTime = 0;
-  soundTheme.play();
-}
-
-// Loop principal
+// ====== LOOP PRINCIPAL =======
 let lastTime = 0;
-function gameLoop(timestamp = 0) {
+function gameLoop(timestamp) {
+  if (!lastTime) lastTime = timestamp;
   const deltaTime = timestamp - lastTime;
   lastTime = timestamp;
 
   update(deltaTime);
   draw();
 
-  if (!gameOver) {
-    requestAnimationFrame(gameLoop);
-  }
+  if (!gameOver) requestAnimationFrame(gameLoop);
 }
 
-// Eventos de controle
+// ====== EVENTOS =======
+startButton.addEventListener("click", () => {
+  startScreen.classList.add("hidden");
+  gameCanvas.classList.remove("hidden");
+  scoreDisplay.innerText = "🪙 0";
+  score = 0;
+  gameSpeed = 4;
+  obstacles = [];
+  coins = [];
+  player.y = GROUND_Y - player.height;
+  player.vy = 0;
+  player.jumping = false;
+  player.invincible = false;
+  player.visible = true;
+  gameOver = false;
+  soundTheme.currentTime = 0;
+  soundTheme.play();
+  requestAnimationFrame(gameLoop);
+});
+
+restartButton.addEventListener("click", () => {
+  gameOverScreen.classList.add("hidden");
+  startScreen.classList.remove("hidden");
+});
+
 window.addEventListener("keydown", (e) => {
   if (e.code === "Space" || e.code === "ArrowUp") {
     jump();
-
-    if (gameOver) {
-      restartGame();
-      gameLoop();
-    }
   }
 });
-
-// Suporte a toque em dispositivos móveis
-window.addEventListener("touchstart", () => {
-  if (gameOver) {
-    restartGame();
-    gameLoop();
-  } else {
-    jump();
-  }
-});
-
-
-document.getElementById("restartButton").addEventListener("click", () => {
-  restartGame();
-  gameLoop();
-});
-
-// Começa o jogo e toca música
-soundTheme.play();
-fetchHighScores();
-gameLoop();

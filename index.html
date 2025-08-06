@@ -5,15 +5,45 @@
   <title>Super Lino BROS</title>
   <link rel="stylesheet" href="style.css" />
   <style>
+
+    <head>
+  <style>
+    /* outros estilos */
+
+    #startScreen {
+      width: 800px;
+      height: 400px;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      background-color: #000;
+      color: white;
+      user-select: none;
+      margin: auto;
+    }
+
+    /* outros estilos */
+
+
+
+
+
     /* Apenas para garantir que o #gameOverScreen esconda quando tiver a classe hidden */
     .hidden {
       display: none;
     }
+
     #gameContainer {
       position: relative;
       width: 800px;
       margin: auto;
+            background-color: #000000;
+
     }
+
     #score {
       position: absolute;
       top: 10px;
@@ -24,6 +54,7 @@
       text-shadow: 1px 1px 2px black;
       user-select: none;
     }
+
     #gameOverScreen {
       position: absolute;
       top: 50%;
@@ -38,12 +69,14 @@
       border-radius: 10px;
       user-select: none;
     }
+
     #highScores {
       margin-top: 15px;
       text-align: left;
       max-height: 200px;
       overflow-y: auto;
     }
+
     #restartButton {
       margin-top: 20px;
       padding: 10px 20px;
@@ -55,13 +88,60 @@
       border-radius: 5px;
       transition: background-color 0.3s ease;
     }
+
     #restartButton:hover {
       background: #218838;
     }
+
+    /* Estilo da tela inicial */
+    #startScreen {
+      text-align: center;
+      margin-top: 100px;
+      color: white;
+      user-select: none;
+    }
+
+    #gameCanvas {
+      display: none; /* Canvas começa escondido */
+      background: #000; /* Fundo preto para o canvas */
+      display: block; /* Para centralizar no container */
+      margin: 0 auto;
+    }
+
+    #startButton {
+      margin-top: 20px;
+      padding: 15px 40px;
+      font-size: 24px;
+      cursor: pointer;
+      border: none;
+      background: #085a2d;
+      color: white;
+      border-radius: 8px;
+      transition: background-color 0.3s ease;
+    }
+
+    #startButton:hover {
+      background: #000000;
+    }
   </style>
+
+  
 </head>
 <body>
   <div id="gameContainer">
+    <!-- Tela inicial -->
+    <div id="startScreen">
+      <h1>Super Lino BROS</h1>
+      <br>
+      <br>
+      <br>
+      <br>
+      <br>
+       <h2>Lino acabou de receber seu salário.<br>
+        Ajude-o a chegar em casa antes que as contas acabem com tudo!</h2>
+        <button id="startButton">Jogar</button>
+    </div>
+
     <canvas id="gameCanvas" width="800" height="400"></canvas>
     <div id="score">🪙 0</div>
 
@@ -76,20 +156,8 @@
       <button id="restartButton">Recomeçar</button>
     </div>
   </div>
-    
-
-
-
 
   <!-- Importa o script como módulo para usar import do Firebase -->
-   <!-- Aqui ficam os scripts -->
   <script type="module" src="script.js"></script>
-
-  <!-- Mensagem para orientar o usuário -->
-  <div id="rotateScreen" class="hidden">
-    🔄 Por favor, vire o celular para o modo paisagem!
-  </div>
-
-  
 </body>
 </html>
