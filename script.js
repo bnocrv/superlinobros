@@ -460,7 +460,7 @@ startButton.addEventListener("click", () => {
 
 restartButton.addEventListener("click", () => {
   gameOverScreen.classList.add("hidden");
-  startScreen.classList.remove("hidden");
+  resetGame(); // nova função que reinicia o jogo direto
 });
 
 window.addEventListener("keydown", (e) => {
@@ -468,3 +468,27 @@ window.addEventListener("keydown", (e) => {
     jump();
   }
 });
+
+// Evento de toque para dispositivos móveis
+window.addEventListener("touchstart", () => {
+  jump();
+});
+
+
+function resetGame() {
+  gameCanvas.classList.remove("hidden");
+  scoreDisplay.innerText = "🪙 0";
+  score = 0;
+  gameSpeed = 4;
+  obstacles = [];
+  coins = [];
+  player.y = GROUND_Y - player.height;
+  player.vy = 0;
+  player.jumping = false;
+  player.invincible = false;
+  player.visible = true;
+  gameOver = false;
+  soundTheme.currentTime = 0;
+  soundTheme.play();
+  requestAnimationFrame(gameLoop);
+}
