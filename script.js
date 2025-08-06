@@ -463,6 +463,17 @@ window.addEventListener("keydown", (e) => {
   }
 });
 
+// Suporte a toque em dispositivos móveis
+window.addEventListener("touchstart", () => {
+  if (gameOver) {
+    restartGame();
+    gameLoop();
+  } else {
+    jump();
+  }
+});
+
+
 document.getElementById("restartButton").addEventListener("click", () => {
   restartGame();
   gameLoop();
