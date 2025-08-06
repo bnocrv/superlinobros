@@ -407,11 +407,19 @@ async function endGame() {
   document.getElementById("finalScore").innerText = score;
   document.getElementById("gameOverScreen").classList.remove("hidden");
 
-  // Pergunta o nome do jogador para salvar o score
-  let playerName = prompt("Fim de jogo! Digite seu nome para salvar sua pontuação:", "Lino");
+await fetchHighScores();
+
+
+// Verifica se a pontuação é alta o suficiente para entrar no top 5
+const lowestHighScore = highScores.length < 5 ? 0 : highScores[highScores.length - 1].score;
+
+if (score > lowestHighScore || highScores.length < 5) {
+  let playerName = prompt("Parabéns! Você entrou no Top 5! Digite seu nome:", "Lino");
   if (!playerName) playerName = "Anônimo";
 
   await addHighScore(playerName, score);
+}
+
 
   // Atualiza ranking na tela
   await fetchHighScores();
