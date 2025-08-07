@@ -82,7 +82,7 @@ Esse projeto foi criado com o objetivo de aplicar conhecimentos práticos em ló
 
 # 👨‍💻 Sobre
 
-Esse projeto foi desenvolvido durante meus estudos em Análise e Desenvolvimento de Sistemas e após o Curso em Vídeo de JavaScript do proferssor Gustavo Guanabara, com o objetivo de praticar lógica de programação, integração com serviços externos e desenvolvimento de uma aplicação completa do zero, com foco em front-end.
+Esse projeto foi desenvolvido como parte dos meus estudos de ADS (na Afya) e JS (Curso em Vídeo), com o objetivo de praticar lógica de programação, integração com serviços externos e desenvolvimento de uma aplicação completa do zero, com foco em front-end.
 
 ---
 
