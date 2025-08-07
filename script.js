@@ -464,10 +464,20 @@ restartButton.addEventListener("click", () => {
 });
 
 window.addEventListener("keydown", (e) => {
-  if (e.code === "Space" || e.code === "ArrowUp") {
+  if ((e.code === "Space" || e.code === "ArrowUp") && !gameOver) {
     jump();
   }
+
+  if ((e.code === "Enter" || e.code === "Space") && gameOver) {
+    gameOverScreen.classList.add("hidden");
+    resetGame();
+  }
 });
+
+
+
+
+
 
 // Evento de toque para dispositivos móveis
 window.addEventListener("touchstart", () => {
