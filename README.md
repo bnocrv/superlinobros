@@ -46,7 +46,7 @@ Esse projeto foi criado com o objetivo de aplicar conhecimentos práticos em ló
 
 ---
 
-## 🧠 Conceitos e tecnologias aplicadas
+# 🧠 Conceitos e tecnologias aplicadas
 
 - HTML5 semântico
 - CSS3 para estilização responsiva
@@ -54,19 +54,6 @@ Esse projeto foi criado com o objetivo de aplicar conhecimentos práticos em ló
 - Firebase para persistência e leitura de dados em tempo real
 - Controle de fluxo de jogo com `setInterval` e `requestAnimationFrame`
 - Detecção de colisão e controle de física de pulo simples
-
----
-
-## 📁 Estrutura do projeto
-
-- 📁 audio → Arquivos de som (música e efeitos sonoros)
-- 📁 img → Imagens e sprites do jogo
-- 📁 node_modules → Dependências do projeto (caso Firebase ou deploy local use npm)
-- 📄 index.html → Estrutura principal da aplicação
-- 📄 style.css → Estilos da interface e animações
-- 📄 script.js → Toda a lógica do jogo (movimentação, colisão, score, power-up)
-- 📄 package.json → Dependências e metadados do projeto
-- 📄 package-lock.json → Detalhamento das versões instaladas
 
 ---
 
