@@ -67,6 +67,17 @@ for (let i = 1; i <= 5; i++) {
   explosionFrames.push(img);
 }
 
+// ==== BOSS SPRITES (NOVO)
+const bossFrames = [];
+for (let i = 1; i <= 3; i++) {
+  const img = new Image();
+  img.src = `img/boss${i}.png`; // boss1.png, boss2.png, boss3.png
+  bossFrames.push(img);
+}
+
+// mantenho a imagem antiga apenas como fallback (não usada para animação)
+const bossStaticImg = new Image();
+bossStaticImg.src = "img/boss.png";
 
 // ==== SONS
 const soundTheme = new Audio("audio/theme.wav");
@@ -98,7 +109,6 @@ const player = {
   visible: true,
 };
 
-
 // ==== VARIÁVEIS DO JOGO
 let score = 0;
 let gameOver = false;
@@ -114,7 +124,6 @@ let canRoll = true; // <- permite uma rolagem por pressionamento
 let touchStartY = 0; // <- touch
 let touchEndY = 0; // <- touch
 
-
 const powerupDuration = 5000;
 const blinkInterval = 200;
 
@@ -129,6 +138,28 @@ let explosion = {
   frameTimer: 0
 };
 
+// ==== BOSS ====
+const boss = {
+  x: canvas.width,
+  y: GROUND_Y - 120,
+  width: 120,
+  height: 120,
+  vx: 0,
+  state: "idle",
+  active: false,
+  attackTimer: 0,
+  attackInterval: 1000,
+  attackCount: 0,
+  maxAttacks: 3,
+  cooldownTimer: 0,
+  // ANIMAÇÃO DO CHEFE (NOVO)
+  frame: 0,
+  frameDelay: 10,
+  frameTimer: 0,
+  // image: fallback se precisar
+  image: bossStaticImg,
+};
+// OBS: REMOVIDO bossWeapons e spawnBossWeapon (poder de jogar item) conforme pedido
 
 // ==== FUNÇÕES FIRESTORE
 async function fetchHighScores() {
@@ -214,6 +245,24 @@ function spawnObstacle() {
   }
 }
 
+function spawnBoss() {
+  boss.active = true;
+  boss.state = "idle";
+  boss.x = canvas.width;
+  boss.y = GROUND_Y - boss.height;
+  boss.vx = 0;
+  boss.attackTimer = 0;
+  boss.attackCount = 0;
+  boss.cooldownTimer = 0;
+  // reset animation
+  boss.frame = 0;
+  boss.frameTimer = 0;
+  soundTheme.playbackRate = 1.8;
+}
+
+// REMOVIDA a função spawnBossWeapon() e todo o sistema bossWeapons (poder de jogar item)
+
+// função de checar se moeda muito próxima de obstáculo
 function isCoinTooCloseToObstacle(x, y, width, height) {
   const minDistX = 80;
   for (const o of obstacles) {
@@ -256,7 +305,6 @@ function update(deltaTime) {
   }
 }
 
-
   // Aplicar gravidade
   const currentGravity = (player.jumping && player.fastFall) ? FAST_FALL_GRAVITY : GRAVITY;
   player.vy += currentGravity;
@@ -269,20 +317,19 @@ function update(deltaTime) {
     player.fastFall = false;
 
     if (player.rolling) {
-  player.rollFrameTimer++;
-  if (player.rollFrameTimer >= player.rollFrameDelay) {
-    player.rollFrame++;
-    if (player.rollFrame >= rollFrames.length) {
-      player.rolling = false;
-      player.rollFrame = 0;
+      player.rollFrameTimer++;
+      if (player.rollFrameTimer >= player.rollFrameDelay) {
+        player.rollFrame++;
+        if (player.rollFrame >= rollFrames.length) {
+          player.rolling = false;
+          player.rollFrame = 0;
 
-      // 🔁 Restaurar hitbox original
-      player.hitbox = { ...player.originalHitbox };
+          // 🔁 Restaurar hitbox original
+          player.hitbox = { ...player.originalHitbox };
+        }
+        player.rollFrameTimer = 0;
+      }
     }
-    player.rollFrameTimer = 0;
-  }
-}
-
   }
 
   if (!player.jumping && !player.rolling) {
@@ -299,19 +346,18 @@ function update(deltaTime) {
   obstacles = obstacles.filter((o) => o.x + o.width > 0);
   coins = coins.filter((c) => c.x + c.width > 0);
 
- for (let o of obstacles) {
-  if (!player.invincible && checkCollision(player, o)) {
-    // 👉 Ativa a explosão na posição do jogador
-    explosion.active = true;
-    explosion.frame = 0;
-    explosion.frameTimer = 0;
-    explosion.x = player.x;
-    explosion.y = player.y;
+  for (let o of obstacles) {
+    if (!player.invincible && checkCollision(player, o)) {
+      // 👉 Ativa a explosão na posição do jogador
+      explosion.active = true;
+      explosion.frame = 0;
+      explosion.frameTimer = 0;
+      explosion.x = player.x;
+      explosion.y = player.y;
 
-    endGame();
+      endGame();
+    }
   }
-}
-
 
   coins.forEach((coin, i) => {
     if (checkCollision(player, coin)) {
@@ -337,6 +383,73 @@ function update(deltaTime) {
       powerupTimer = 0;
       soundTheme.playbackRate = 1;
     }
+  }
+
+  // === CHEFÃO ===
+  if (score % 100 === 0 && score !== 0 && !boss.active) {
+    spawnBoss();
+  }
+
+  if (boss.active) {
+    switch (boss.state) {
+      case "idle":
+        boss.attackTimer += deltaTime;
+        if (boss.attackTimer > 2000) {
+          boss.attackTimer = 0;
+          boss.state = "attacking";
+        }
+        break;
+
+      case "attacking":
+        boss.attackTimer += deltaTime;
+        if (boss.attackTimer > boss.attackInterval) {
+          boss.attackTimer = 0;
+          boss.attackCount++;
+          // **REMOVED**: spawnBossWeapon() call removed (chefe não joga mais itens)
+          if (boss.attackCount >= boss.maxAttacks) {
+            boss.state = "running";
+            boss.vx = -6;
+          }
+        }
+        break;
+
+      case "running":
+        boss.x += boss.vx;
+
+        // Pulo na cabeça derrota
+        if (checkCollision(player, boss)) {
+          if (player.vy > 0) {
+            boss.active = false;
+            boss.state = "dead";
+            soundTheme.playbackRate = 1;
+            score += 10;
+            scoreDisplay.innerText = `🪙 ${score}`;
+            explosion.active = true;
+            explosion.frame = 0;
+            explosion.frameTimer = 0;
+            explosion.x = boss.x;
+            explosion.y = boss.y;
+          } else {
+            if (!player.invincible) {
+              explosion.active = true;
+              explosion.frame = 0;
+              explosion.frameTimer = 0;
+              explosion.x = player.x;
+              explosion.y = player.y;
+              endGame();
+            }
+          }
+        }
+
+        if (boss.x + boss.width < 0) {
+          boss.active = false;
+          boss.state = "idle";
+          soundTheme.playbackRate = 1;
+        }
+        break;
+    }
+
+    // **OBS:** Não há mais armas do boss para mover/checar colisão — isso foi removido conforme pedido
   }
 
   obstacleTimer += deltaTime;
@@ -376,13 +489,26 @@ function draw() {
     }
   }
 
-  if (explosion.active) {
-  const frameImg = explosionFrames[explosion.frame];
-  if (frameImg) {
-    ctx.drawImage(frameImg, explosion.x - 20, explosion.y - 20, 100, 100);
-  }
-}
+  // **REMOVED**: desenho de armas do chefão (não existem mais)
 
+  // Chefão (com animação de sprites)
+  if (boss.active) {
+    // atualizar frame de animação do boss
+    boss.frameTimer++;
+    if (boss.frameTimer >= boss.frameDelay) {
+      boss.frame = (boss.frame + 1) % bossFrames.length;
+      boss.frameTimer = 0;
+    }
+    const bossImg = bossFrames[boss.frame] || boss.image;
+    ctx.drawImage(bossImg, boss.x, boss.y, boss.width, boss.height);
+  }
+
+  if (explosion.active) {
+    const frameImg = explosionFrames[explosion.frame];
+    if (frameImg) {
+      ctx.drawImage(frameImg, explosion.x - 20, explosion.y - 20, 100, 100);
+    }
+  }
 
   ctx.drawImage(rosto, 10, 10, 40, 40);
 }
@@ -463,27 +589,68 @@ function gameLoop(timestamp) {
 }
 
 function startGame() {
+  // Resetar explosão
   explosion.active = false;
-explosion.frame = 0;
-explosion.frameTimer = 0;
+  explosion.frame = 0;
+  explosion.frameTimer = 0;
 
+  // Esconder telas de início e fim, mostrar canvas
   startScreen.classList.add("hidden");
   gameOverScreen.classList.add("hidden");
   gameCanvas.classList.remove("hidden");
-  scoreDisplay.innerText = "🪙 0";
+
+  // Resetar pontuação e atualizar display
   score = 0;
+  scoreDisplay.innerText = "🪙 0";
+
+  // Resetar velocidade do jogo
   gameSpeed = 4;
+
+  // Limpar arrays de obstáculos e moedas
   obstacles = [];
   coins = [];
+
+  // Resetar estado do jogador
   player.y = GROUND_Y - player.height;
   player.vy = 0;
   player.jumping = false;
   player.rolling = false;
   player.invincible = false;
   player.visible = true;
+  player.fastFall = false;
+
+  // Restaurar hitbox para estado original (em pé)
+  player.hitbox = { ...player.originalHitbox };
+
+  // Permitir rolar novamente
+  canRoll = true;
+
+  // Resetar estado de fim de jogo
   gameOver = false;
+
+  // Resetar estado do chefe
+  boss.active = false;
+  boss.state = "idle";
+  boss.x = canvas.width;
+  boss.y = GROUND_Y - boss.height;
+  boss.vx = 0;
+  boss.attackTimer = 0;
+  boss.attackCount = 0;
+  boss.cooldownTimer = 0;
+  // reset animation
+  boss.frame = 0;
+  boss.frameTimer = 0;
+
+  // Resetar offset do chão para evitar "pulo" visual
+  chaoOffset = 0;
+
+  // Reiniciar música tema do jogo
   soundTheme.currentTime = 0;
+  soundTheme.playbackRate = 1;
   soundTheme.play();
+
+  // Iniciar loop do jogo
+  lastTime = 0; // garantir que o deltaTime comece zerado
   requestAnimationFrame(gameLoop);
 }
 
@@ -493,24 +660,23 @@ restartButton.addEventListener("click", startGame);
 
 window.addEventListener("keydown", (e) => {
   if ((e.code === "Space" || e.code === "ArrowUp") && !gameOver) jump();
-if (e.code === "ArrowDown" && !gameOver) {
-  if (player.jumping) {
-    player.fastFall = true;
-  } else if (canRoll) {
-    roll();
-    canRoll = false; // bloqueia até soltar a tecla
+  if (e.code === "ArrowDown" && !gameOver) {
+    if (player.jumping) {
+      player.fastFall = true;
+    } else if (canRoll) {
+      roll();
+      canRoll = false; // bloqueia até soltar a tecla
+    }
   }
-}
 
   if ((e.code === "Enter" || e.code === "Space") && gameOver) startGame();
 });
 
 window.addEventListener("keyup", (e) => {
-if (e.code === "ArrowDown") {
-  player.fastFall = false;
-  canRoll = true; // permite nova rolagem depois de soltar
-}
-
+  if (e.code === "ArrowDown") {
+    player.fastFall = false;
+    canRoll = true; // permite nova rolagem depois de soltar
+  }
 });
 
 window.addEventListener("touchstart", (e) => {
