@@ -77,3 +77,11 @@ Esse projeto foi desenvolvido como parte dos meus estudos de ADS (na Afya) e JS 
 
 - GitHub: [@bnocrv](https://github.com/bnocrv)
 - LinkedIn: [@bnocrv](https://linkedin.com/in/bnocrv)
+
+---
+
+# ⚙️ Atualizações (09/08/2025)
+- Novos comandos implementados: rolamento | acelerar pouso. 
+- Adversários reformulados.
+- Explosão final adicionada.
+
