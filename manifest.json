@@ -1,0 +1,22 @@
+{
+  "name": "Super Lino BROS",
+  "short_name": "Super Lino BROS",
+  "description": "Ajude o Lino a chegar em casa antes que as contas acabem com tudo!",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#ffffff",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "img/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "img/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

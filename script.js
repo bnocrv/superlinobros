@@ -9,6 +9,13 @@ import {
 
 import { db } from "./firebase.js"; // Importa Firestore pronto
 
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/service-worker.js')
+    .then(() => console.log("✅ Service Worker registrado!"))
+    .catch((error) => console.error("❌ Erro ao registrar SW:", error));
+}
+
+
 // ==== DOM
 const startScreen = document.getElementById("startScreen");
 const startButton = document.getElementById("startButton");
@@ -21,6 +28,7 @@ const highScoresDiv = document.getElementById("highScores");
 
 const canvas = gameCanvas;
 const ctx = canvas.getContext("2d");
+
 
 // ==== CONSTANTES
 const GRAVITY = 0.6;
@@ -257,7 +265,7 @@ function spawnBoss() {
   // reset animation
   boss.frame = 0;
   boss.frameTimer = 0;
-  soundTheme.playbackRate = 0.8;
+  soundTheme.playbackRate = 1.5;
 }
 
 // REMOVIDA a função spawnBossWeapon() e todo o sistema bossWeapons (poder de jogar item)
@@ -600,7 +608,7 @@ function startGame() {
   gameCanvas.classList.remove("hidden");
 
   // Resetar pontuação e atualizar display
-  score = 97;
+  score = 0;
   scoreDisplay.innerText = "🪙 0";
 
   // Resetar velocidade do jogo

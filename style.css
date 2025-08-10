@@ -8,7 +8,7 @@
 /* Corpo da página */
 body {
   margin: 0;
-  background: #1a1a1a;
+  background: #000000;
   font-family: "PressStart2P", monospace;
   height: 100vh;
   display: flex;
@@ -53,6 +53,8 @@ body {
 /* Container do jogo */
 #gameContainer {
   width: 800px;
+  
+
   position: relative;
   border: 4px solid #fff;
   box-shadow: 0 0 20px rgb(22, 129, 22);

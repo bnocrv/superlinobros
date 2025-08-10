@@ -2,47 +2,44 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Super Lino BROS</title>
 
-    <!-- Importa o arquivo CSS externo -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#000000">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <!-- Container principal do jogo -->
     <div id="gameContainer">
-      <!-- Tela inicial -->
       <div id="startScreen">
-        <h1>Super Lino BROS</h1>
-        <br /><br /><br /><br /><br />
+        <h1>SUPER LINO BROS</h1>
+        
         <h2>
           Lino acabou de receber seu salário.<br />
           Ajude-o a chegar em casa antes que as contas acabem com tudo!
         </h2>
+         <h3>Criado por Bruno Carvalho<br>
+          - GIRE A TELA - 
+         </h3>
+       
         <button id="startButton">Jogar</button>
       </div>
+      
 
-      <!-- Área de jogo (canvas) -->
       <canvas id="gameCanvas" width="800" height="400"></canvas>
+      
 
-      <!-- Pontuação atual -->
       <div id="score">🪙 0</div>
 
-      <!-- Tela de Game Over -->
       <div id="gameOverScreen" class="hidden">
         <h1>Game Over</h1>
         <p>Você fez <span id="finalScore">0</span> pontos!</p>
-
-        <!-- Ranking de pontuações -->
-        <div id="highScores">
-          <!-- Scores serão inseridos via JavaScript -->
-        </div>
-
-        <!-- Botão de reinício -->
+        <div id="highScores"></div>
         <button id="restartButton">Recomeçar</button>
       </div>
     </div>
 
-    <!-- Importa o script principal (como módulo para permitir uso de imports) -->
     <script type="module" src="script.js"></script>
   </body>
 </html>
