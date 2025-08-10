@@ -715,3 +715,23 @@ window.addEventListener("touchend", (e) => {
     canRoll = true;
   }, 300); // pequeno delay para evitar spam
 });
+
+document.getElementById("btn-jump").addEventListener("touchstart", (e) => {
+  e.preventDefault();
+  if (!gameOver) jump();
+}, { passive: false });
+
+document.getElementById("btn-roll").addEventListener("touchstart", (e) => {
+  e.preventDefault();
+  if (!gameOver) {
+    if (player.jumping) {
+      player.fastFall = true;
+    } else if (canRoll) {
+      roll();
+      canRoll = false;
+      setTimeout(() => {
+        canRoll = true;
+      }, 300);
+    }
+  }
+}, { passive: false });
