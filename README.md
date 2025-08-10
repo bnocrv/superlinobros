@@ -84,4 +84,5 @@ Esse projeto foi desenvolvido como parte dos meus estudos de ADS (na Afya) e JS 
 - Novos comandos implementados: rolamento | acelerar pouso. 
 - Adversários reformulados.
 - Explosão final adicionada.
+- Primeiro boss adicionado
 
