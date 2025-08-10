@@ -600,7 +600,7 @@ function startGame() {
   gameCanvas.classList.remove("hidden");
 
   // Resetar pontuação e atualizar display
-  score = 97;
+  score = 0;
   scoreDisplay.innerText = "🪙 0";
 
   // Resetar velocidade do jogo
