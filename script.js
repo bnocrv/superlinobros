@@ -257,7 +257,7 @@ function spawnBoss() {
   // reset animation
   boss.frame = 0;
   boss.frameTimer = 0;
-  soundTheme.playbackRate = 0.8;
+  soundTheme.playbackRate =  1.5;
 }
 
 // REMOVIDA a função spawnBossWeapon() e todo o sistema bossWeapons (poder de jogar item)
