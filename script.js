@@ -253,6 +253,27 @@ function spawnObstacle() {
   }
 }
 
+<<<<<<< HEAD
+=======
+function spawnBoss() {
+  boss.active = true;
+  boss.state = "idle";
+  boss.x = canvas.width;
+  boss.y = GROUND_Y - boss.height;
+  boss.vx = 0;
+  boss.attackTimer = 0;
+  boss.attackCount = 0;
+  boss.cooldownTimer = 0;
+  // reset animation
+  boss.frame = 0;
+  boss.frameTimer = 0;
+  soundTheme.playbackRate =  1.5;
+}
+
+// REMOVIDA a função spawnBossWeapon() e todo o sistema bossWeapons (poder de jogar item)
+
+// função de checar se moeda muito próxima de obstáculo
+>>>>>>> 26ca8de269fd2b1641f8244254174ec7def00511
 function isCoinTooCloseToObstacle(x, y, width, height) {
   const minDistX = 80;
   for (const o of obstacles) {
