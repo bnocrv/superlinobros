@@ -1,51 +1,54 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Super Lino BROS</title>
 
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#000000">
-    <link rel="apple-touch-icon" href="icons/icon-192.png">
-    <link rel="stylesheet" href="style.css" />
-  </head>
-  <body>
-    <div id="gameContainer">
-      <div id="startScreen">
-        <h1>SUPER LINO BROS</h1>
-        
-        <h2>
-          Lino acabou de receber seu salário.<br />
-          Ajude-o a chegar em casa antes que as contas acabem com tudo!
-        </h2>
-         <h3>Criado por Bruno Carvalho<br>
-          - GIRE A TELA - 
-         </h3>
-       
-        <button id="startButton">Jogar</button>
-      </div>
-      
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Super Lino BROS</title>
 
-      <canvas id="gameCanvas" width="800" height="400"></canvas>
-      
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#000000" />
+  <meta name="description" content="Ajude o Lino a chegar em casa antes que as contas acabem com tudo!" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="stylesheet" href="style.css" />
+</head>
 
-      <div id="score">🪙 0</div>
-
-      <div id="gameOverScreen" class="hidden">
-        <h1>Game Over</h1>
-        <p>Você fez <span id="finalScore">0</span> pontos!</p>
-        <div id="highScores"></div>
-        <button id="restartButton">Recomeçar</button>
-      </div>
+<body>
+  <div id="gameContainer">
+    <div id="startScreen">
+      <h1>SUPER LINO BROS</h1>
+      <br />
+      <h2>
+        Lino acabou de receber seu salário.<br />
+        Ajude-o a chegar em casa antes que as contas acabem com tudo!
+      </h2>
+      <br />
+      <h3>
+        Criado por Bruno Carvalho<br />(Em desenvolvimento)
+      </h3>
+      <button id="startButton">Jogar</button>
     </div>
-    <div id="mobile-controls">
-  <button id="btn-jump">⬆️</button>
-  <button id="btn-roll">⬇️</button>
-</div>
 
+    <canvas id="gameCanvas" width="800" height="400"></canvas>
 
-    <script type="module" src="script.js"></script>
+    <div id="score">🪙 0</div>
 
-  </body>
+    <div id="gameOverScreen" class="hidden">
+      <h1>Game Over</h1>
+      <p>Você fez <span id="finalScore">0</span> pontos!</p>
+      <div id="highScores"></div>
+      <button id="restartButton">Recomeçar</button>
+    </div>
+  </div>
+
+  <div id="mobile-controls">
+    <button id="btn-jump">⬆
+
+    </button>
+    <button id="btn-roll">⬇</button>
+  </div>
+
+  <script type="module" src="script.js"></script>
+</body>
+
 </html>

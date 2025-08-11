@@ -28,6 +28,8 @@ const highScoresDiv = document.getElementById("highScores");
 
 const canvas = gameCanvas;
 const ctx = canvas.getContext("2d");
+const isMobile = window.innerWidth < 768;
+
 
 
 // ==== CONSTANTES
@@ -94,6 +96,9 @@ soundTheme.volume = 0.1;
 const soundJump = new Audio("audio/jump.ogg");
 const soundDie = new Audio("audio/die.ogg");
 const soundPowerup = new Audio("audio/powerup.ogg");
+const soundCoin = new Audio("audio/coin.ogg");
+soundCoin.volume = 0.01; // ajuste se quiser mais alto/baixo
+
 
 // ==== ESTADO JOGADOR
 const player = {
@@ -368,15 +373,18 @@ function update(deltaTime) {
   }
 
   coins.forEach((coin, i) => {
-    if (checkCollision(player, coin)) {
-      score++;
-      scoreDisplay.innerText = `🪙 ${score}`;
-      coins.splice(i, 1);
+  if (checkCollision(player, coin)) {
+    score++;
+    scoreDisplay.innerText = `🪙 ${score}`;
+    coins.splice(i, 1);
 
-      if (score % 10 === 0) gameSpeed += 0.5;
-      if (score % 30 === 0) activatePowerup();
-    }
-  });
+    soundCoin.cloneNode().play(); // TOCA O SOM AO PEGAR MOEDA
+
+    if (score % 10 === 0) gameSpeed += 0.5;
+    if (score % 30 === 0) activatePowerup();
+  }
+});
+
 
   if (player.invincible) {
     powerupTimer += deltaTime;
@@ -486,16 +494,39 @@ function draw() {
   coins.forEach((c) => ctx.drawImage(moedaImg, c.x, c.y, c.width, c.height));
   obstacles.forEach((o) => ctx.drawImage(o.image, o.x, o.y, o.width, o.height));
 
-  if (player.visible) {
-    if (player.jumping) {
-      ctx.drawImage(jumpSprite, player.x, player.y, player.width, player.height);
-    } else if (player.rolling) {
-      const rollImage = rollFrames[player.rollFrame];
-      ctx.drawImage(rollImage, player.x, player.y + 20, player.width, player.height * 0.7);
+if (player.visible) {
+  if (player.jumping) {
+    if (isMobile) {
+      const aspectRatio = jumpSprite.width / jumpSprite.height;
+      const desiredHeight = player.height;
+      const desiredWidth = desiredHeight * aspectRatio;
+      ctx.drawImage(jumpSprite, player.x, player.y, desiredWidth, desiredHeight);
     } else {
-      ctx.drawImage(runFrames[player.frame], player.x, player.y, player.width, player.height);
+      ctx.drawImage(jumpSprite, player.x, player.y, player.width, player.height);
+    }
+  } else if (player.rolling) {
+    const rollImage = rollFrames[player.rollFrame];
+    if (isMobile) {
+      const aspectRatio = rollImage.width / rollImage.height;
+      const desiredHeight = player.height * 0.7;
+      const desiredWidth = desiredHeight * aspectRatio;
+      ctx.drawImage(rollImage, player.x, player.y + 20, desiredWidth, desiredHeight);
+    } else {
+      ctx.drawImage(rollImage, player.x, player.y + 20, player.width, player.height * 0.7);
+    }
+  } else {
+    const runImage = runFrames[player.frame];
+    if (isMobile) {
+      const aspectRatio = runImage.width / runImage.height;
+      const desiredHeight = player.height;
+      const desiredWidth = desiredHeight * aspectRatio;
+      ctx.drawImage(runImage, player.x, player.y, desiredWidth, desiredHeight);
+    } else {
+      ctx.drawImage(runImage, player.x, player.y, player.width, player.height);
     }
   }
+}
+
 
   // **REMOVED**: desenho de armas do chefão (não existem mais)
 
