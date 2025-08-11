@@ -73,8 +73,7 @@ body {
   border-radius: 0;
   font-family: "PressStart2P", monospace;
   text-transform: uppercase;
-  box-shadow: inset -2px -2px 0 #bcb1b1,
-              inset 2px 2px 0 #f4d4d4;
+  box-shadow: inset -2px -2px 0 #bcb1b1, inset 2px 2px 0 #f4d4d4;
   transition: all 0.1s ease;
 }
 
@@ -140,23 +139,23 @@ body {
 }
 
 #mobile-controls button {
-
- font-size: 2rem; /* Tamanho do texto dentro do botão. Indiretamente afeta o tamanho total se não houver altura fixa */
-    padding: 16px 28px; /* Espaçamento interno: 16px em cima/baixo, 22px nas laterais. Aumentar aqui aumenta o tamanho do botão */
-    border: 2px solid rgba(255, 255, 255, 0.4); /* Borda branca semitransparente */
-    border-radius: 50%; /* Deixa o botão redondo (círculo) se largura = altura */
-    background-color: rgba(255, 255, 255, 0.2); /* Fundo semitransparente */
-    backdrop-filter: blur(6px); /* Aplica desfoque no fundo atrás do botão (efeito vidro fosco) */
-    color: #fff; /* Cor do texto: branco */
-    text-shadow: 1px 1px 0 #000; /* Sombra no texto (preta) para dar contraste */
-    box-shadow: 0 4px 8px rgb(20, 47, 1); /* Sombra ao redor do botão para profundidade */
-    pointer-events: auto; /* Permite clicar/tocar no botão */
-    touch-action: none; /* Evita zoom/rolagem indesejada em toques */
-    user-select: none; /* Impede que o texto seja selecionado por engano */
-    font-family: "PressStart2P", monospace; /* Fonte retrô usada no jogo */
-    transition: transform 0.1s ease, background-color 0.2s ease; /* Animação suave ao apertar ou passar o dedo */
+  font-size: 2rem; /* Tamanho do texto dentro do botão. Indiretamente afeta o tamanho total se não houver altura fixa */
+  padding: 16px 28px; /* Espaçamento interno: 16px em cima/baixo, 22px nas laterais. Aumentar aqui aumenta o tamanho do botão */
+  border: 2px solid rgba(255, 255, 255, 0.4); /* Borda branca semitransparente */
+  border-radius: 50%; /* Deixa o botão redondo (círculo) se largura = altura */
+  background-color: rgba(255, 255, 255, 0.2); /* Fundo semitransparente */
+  backdrop-filter: blur(
+    6px
+  ); /* Aplica desfoque no fundo atrás do botão (efeito vidro fosco) */
+  color: #fff; /* Cor do texto: branco */
+  text-shadow: 1px 1px 0 #000; /* Sombra no texto (preta) para dar contraste */
+  box-shadow: 0 4px 8px rgb(20, 47, 1); /* Sombra ao redor do botão para profundidade */
+  pointer-events: auto; /* Permite clicar/tocar no botão */
+  touch-action: none; /* Evita zoom/rolagem indesejada em toques */
+  user-select: none; /* Impede que o texto seja selecionado por engano */
+  font-family: "PressStart2P", monospace; /* Fonte retrô usada no jogo */
+  transition: transform 0.1s ease, background-color 0.2s ease; /* Animação suave ao apertar ou passar o dedo */
 }
-
 
 #mobile-controls button:active {
   transform: scale(0.95);
