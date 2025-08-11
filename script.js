@@ -9,12 +9,12 @@ import {
 
 import { db } from "./firebase.js"; // Importa Firestore pronto
 
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/service-worker.js')
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker
+    .register("/service-worker.js")
     .then(() => console.log("✅ Service Worker registrado!"))
     .catch((error) => console.error("❌ Erro ao registrar SW:", error));
 }
-
 
 // ==== DOM
 const startScreen = document.getElementById("startScreen");
@@ -29,8 +29,6 @@ const highScoresDiv = document.getElementById("highScores");
 const canvas = gameCanvas;
 const ctx = canvas.getContext("2d");
 const isMobile = window.innerWidth < 768;
-
-
 
 // ==== CONSTANTES
 const GRAVITY = 0.6;
@@ -99,7 +97,6 @@ const soundPowerup = new Audio("audio/powerup.ogg");
 const soundCoin = new Audio("audio/coin.ogg");
 soundCoin.volume = 0.01; // ajuste se quiser mais alto/baixo
 
-
 // ==== ESTADO JOGADOR
 const player = {
   x: 100,
@@ -110,7 +107,7 @@ const player = {
   jumping: false,
   rolling: false,
   rollFrame: 0,
-  rollFrameDelay: 7,  // Tempo da rolagem
+  rollFrameDelay: 7, // Tempo da rolagem
   rollFrameTimer: 2,
   frame: 0,
   frameDelay: 5,
@@ -124,6 +121,7 @@ const player = {
 
 // ==== VARIÁVEIS DO JOGO
 let score = 0;
+let powerupEligibleCoins = 0; // Contador de moedas que valem para ativar powerup
 let gameOver = false;
 let gameSpeed = 4;
 let chaoOffset = 0;
@@ -132,12 +130,13 @@ let coins = [];
 let obstacleTimer = 0;
 let coinTimer = 0;
 let powerupTimer = 0;
+let coinRainActive = false; // controla a chuva de moedas
 let blinkTimer = 0;
 let canRoll = true; // <- permite uma rolagem por pressionamento
 let touchStartY = 0; // <- touch
 let touchEndY = 0; // <- touch
 
-const powerupDuration = 5000;
+const powerupDuration = 3000;
 const blinkInterval = 200;
 
 let highScores = [];
@@ -148,7 +147,7 @@ let explosion = {
   x: 0,
   y: 0,
   frameDelay: 5,
-  frameTimer: 0
+  frameTimer: 0,
 };
 
 // ==== BOSS ====
@@ -222,12 +221,18 @@ function displayHighScores() {
 function escapeHTML(str) {
   return str.replace(/[&<>"']/g, (m) => {
     switch (m) {
-      case "&": return "&amp;";
-      case "<": return "&lt;";
-      case ">": return "&gt;";
-      case '"': return "&quot;";
-      case "'": return "&#39;";
-      default: return m;
+      case "&":
+        return "&amp;";
+      case "<":
+        return "&lt;";
+      case ">":
+        return "&gt;";
+      case '"':
+        return "&quot;";
+      case "'":
+        return "&#39;";
+      default:
+        return m;
     }
   });
 }
@@ -238,23 +243,34 @@ function spawnObstacle() {
   const tipo = Math.random();
 
   if (tipo < 0.4) {
-    obstacles.push({ x: canvas.width, y: GROUND_Y - 31, width: 54, height: 31, image: obstaculoChaoImg });
- } else if (tipo < 0.7) {
-  const height = 31;
-  const minY = GROUND_Y - 180; // topo
-  const maxY = GROUND_Y - 75;  // mais baixo, exige rolar
-  const y = Math.floor(Math.random() * (maxY - minY + 1)) + minY;
+    obstacles.push({
+      x: canvas.width,
+      y: GROUND_Y - 31,
+      width: 54,
+      height: 31,
+      image: obstaculoChaoImg,
+    });
+  } else if (tipo < 0.7) {
+    const height = 31;
+    const minY = GROUND_Y - 180; // topo
+    const maxY = GROUND_Y - 75; // mais baixo, exige rolar
+    const y = Math.floor(Math.random() * (maxY - minY + 1)) + minY;
 
-  obstacles.push({
-    x: canvas.width,
-    y,
-    width: 54,
-    height,
-    image: obstaculoVoadorImg
-  });
-}
- else {
-    obstacles.push({ x: canvas.width, y: GROUND_Y - 80, width: 54, height: 80, image: obstaculoPosteImg });
+    obstacles.push({
+      x: canvas.width,
+      y,
+      width: 54,
+      height,
+      image: obstaculoVoadorImg,
+    });
+  } else {
+    obstacles.push({
+      x: canvas.width,
+      y: GROUND_Y - 80,
+      width: 54,
+      height: 80,
+      image: obstaculoPosteImg,
+    });
   }
 }
 
@@ -270,7 +286,7 @@ function spawnBoss() {
   // reset animation
   boss.frame = 0;
   boss.frameTimer = 0;
-  soundTheme.playbackRate =  1.5;
+  soundTheme.playbackRate = 1.5;
 }
 
 // REMOVIDA a função spawnBossWeapon() e todo o sistema bossWeapons (poder de jogar item)
@@ -307,19 +323,20 @@ function update(deltaTime) {
   if (gameOver) return;
 
   if (explosion.active) {
-  explosion.frameTimer++;
-  if (explosion.frameTimer >= explosion.frameDelay) {
-    explosion.frame++;
-    explosion.frameTimer = 0;
+    explosion.frameTimer++;
+    if (explosion.frameTimer >= explosion.frameDelay) {
+      explosion.frame++;
+      explosion.frameTimer = 0;
 
-    if (explosion.frame >= explosionFrames.length) {
-      explosion.active = false;
+      if (explosion.frame >= explosionFrames.length) {
+        explosion.active = false;
+      }
     }
   }
-}
 
   // Aplicar gravidade
-  const currentGravity = (player.jumping && player.fastFall) ? FAST_FALL_GRAVITY : GRAVITY;
+  const currentGravity =
+    player.jumping && player.fastFall ? FAST_FALL_GRAVITY : GRAVITY;
   player.vy += currentGravity;
   player.y += player.vy;
 
@@ -373,30 +390,40 @@ function update(deltaTime) {
   }
 
   coins.forEach((coin, i) => {
-  if (checkCollision(player, coin)) {
-    score++;
-    scoreDisplay.innerText = `🪙 ${score}`;
-    coins.splice(i, 1);
+    if (checkCollision(player, coin)) {
+      score++;
+      scoreDisplay.innerText = `🪙 ${score}`;
+      coins.splice(i, 1);
 
-    soundCoin.cloneNode().play(); // TOCA O SOM AO PEGAR MOEDA
+      soundCoin.cloneNode().play(); // TOCA O SOM AO PEGAR MOEDA
 
-    if (score % 10 === 0) gameSpeed += 0.5;
-    if (score % 30 === 0) activatePowerup();
-  }
-});
+      // Apenas moedas fora da chuva contam para o powerup
+      if (!coinRainActive) {
+        powerupEligibleCoins++;
 
+        if (powerupEligibleCoins % 10 === 0) gameSpeed += 0.5;
+
+        if (powerupEligibleCoins % 30 === 0) {
+          activatePowerup();
+        }
+      }
+    }
+  });
 
   if (player.invincible) {
     powerupTimer += deltaTime;
     blinkTimer += deltaTime;
+
     if (blinkTimer > blinkInterval) {
       player.visible = !player.visible;
       blinkTimer = 0;
     }
+
     if (powerupTimer > powerupDuration) {
       player.invincible = false;
       player.visible = true;
       powerupTimer = 0;
+      coinRainActive = false; // 🌧️ desativa a chuva de moedas
       soundTheme.playbackRate = 1;
     }
   }
@@ -476,7 +503,11 @@ function update(deltaTime) {
     obstacleTimer = 0;
   }
 
-  if (coinTimer > 1200) {
+  coinTimer += deltaTime;
+
+  const coinSpawnInterval = coinRainActive ? 150 : 1200; // 🌧️ mais moedas durante chuva
+
+  if (coinTimer > coinSpawnInterval) {
     spawnCoin();
     coinTimer = 0;
   }
@@ -494,39 +525,74 @@ function draw() {
   coins.forEach((c) => ctx.drawImage(moedaImg, c.x, c.y, c.width, c.height));
   obstacles.forEach((o) => ctx.drawImage(o.image, o.x, o.y, o.width, o.height));
 
-if (player.visible) {
-  if (player.jumping) {
-    if (isMobile) {
-      const aspectRatio = jumpSprite.width / jumpSprite.height;
-      const desiredHeight = player.height;
-      const desiredWidth = desiredHeight * aspectRatio;
-      ctx.drawImage(jumpSprite, player.x, player.y, desiredWidth, desiredHeight);
+  if (player.visible) {
+    if (player.jumping) {
+      if (isMobile) {
+        const aspectRatio = jumpSprite.width / jumpSprite.height;
+        const desiredHeight = player.height;
+        const desiredWidth = desiredHeight * aspectRatio;
+        ctx.drawImage(
+          jumpSprite,
+          player.x,
+          player.y,
+          desiredWidth,
+          desiredHeight
+        );
+      } else {
+        ctx.drawImage(
+          jumpSprite,
+          player.x,
+          player.y,
+          player.width,
+          player.height
+        );
+      }
+    } else if (player.rolling) {
+      const rollImage = rollFrames[player.rollFrame];
+      if (isMobile) {
+        const aspectRatio = rollImage.width / rollImage.height;
+        const desiredHeight = player.height * 0.7;
+        const desiredWidth = desiredHeight * aspectRatio;
+        ctx.drawImage(
+          rollImage,
+          player.x,
+          player.y + 20,
+          desiredWidth,
+          desiredHeight
+        );
+      } else {
+        ctx.drawImage(
+          rollImage,
+          player.x,
+          player.y + 20,
+          player.width,
+          player.height * 0.7
+        );
+      }
     } else {
-      ctx.drawImage(jumpSprite, player.x, player.y, player.width, player.height);
-    }
-  } else if (player.rolling) {
-    const rollImage = rollFrames[player.rollFrame];
-    if (isMobile) {
-      const aspectRatio = rollImage.width / rollImage.height;
-      const desiredHeight = player.height * 0.7;
-      const desiredWidth = desiredHeight * aspectRatio;
-      ctx.drawImage(rollImage, player.x, player.y + 20, desiredWidth, desiredHeight);
-    } else {
-      ctx.drawImage(rollImage, player.x, player.y + 20, player.width, player.height * 0.7);
-    }
-  } else {
-    const runImage = runFrames[player.frame];
-    if (isMobile) {
-      const aspectRatio = runImage.width / runImage.height;
-      const desiredHeight = player.height;
-      const desiredWidth = desiredHeight * aspectRatio;
-      ctx.drawImage(runImage, player.x, player.y, desiredWidth, desiredHeight);
-    } else {
-      ctx.drawImage(runImage, player.x, player.y, player.width, player.height);
+      const runImage = runFrames[player.frame];
+      if (isMobile) {
+        const aspectRatio = runImage.width / runImage.height;
+        const desiredHeight = player.height;
+        const desiredWidth = desiredHeight * aspectRatio;
+        ctx.drawImage(
+          runImage,
+          player.x,
+          player.y,
+          desiredWidth,
+          desiredHeight
+        );
+      } else {
+        ctx.drawImage(
+          runImage,
+          player.x,
+          player.y,
+          player.width,
+          player.height
+        );
+      }
     }
   }
-}
-
 
   // **REMOVED**: desenho de armas do chefão (não existem mais)
 
@@ -583,9 +649,9 @@ function roll() {
     // Reduzir hitbox ao rolar
     player.hitbox = {
       offsetX: 10,
-      offsetY: 40,  // mais próximo do chão
+      offsetY: 40, // mais próximo do chão
       width: 45,
-      height: 35,   // menor altura
+      height: 35, // menor altura
     };
   }
 }
@@ -594,6 +660,7 @@ function activatePowerup() {
   player.invincible = true;
   powerupTimer = 0;
   blinkTimer = 0;
+  coinRainActive = true; // 🌧️ ativa a chuva de moedas
   soundPowerup.play();
   soundTheme.playbackRate = 1.5;
 }
@@ -607,9 +674,13 @@ async function endGame() {
 
   await fetchHighScores();
 
-  const lowestScore = highScores.length < 5 ? 0 : highScores[highScores.length - 1].score;
+  const lowestScore =
+    highScores.length < 5 ? 0 : highScores[highScores.length - 1].score;
   if (score > lowestScore || highScores.length < 5) {
-    let playerName = prompt("Parabéns! Você entrou no Top 5! Digite seu nome:", "Lino");
+    let playerName = prompt(
+      "Parabéns! Você entrou no Top 5! Digite seu nome:",
+      "Lino"
+    );
     if (!playerName) playerName = "Anônimo";
     await addHighScore(playerName, score);
   }
@@ -641,6 +712,7 @@ function startGame() {
   // Resetar pontuação e atualizar display
   score = 0;
   scoreDisplay.innerText = "🪙 0";
+  powerupEligibleCoins = 0;
 
   // Resetar velocidade do jogo
   gameSpeed = 4;
@@ -747,22 +819,30 @@ window.addEventListener("touchend", (e) => {
   }, 300); // pequeno delay para evitar spam
 });
 
-document.getElementById("btn-jump").addEventListener("touchstart", (e) => {
-  e.preventDefault();
-  if (!gameOver) jump();
-}, { passive: false });
+document.getElementById("btn-jump").addEventListener(
+  "touchstart",
+  (e) => {
+    e.preventDefault();
+    if (!gameOver) jump();
+  },
+  { passive: false }
+);
 
-document.getElementById("btn-roll").addEventListener("touchstart", (e) => {
-  e.preventDefault();
-  if (!gameOver) {
-    if (player.jumping) {
-      player.fastFall = true;
-    } else if (canRoll) {
-      roll();
-      canRoll = false;
-      setTimeout(() => {
-        canRoll = true;
-      }, 300);
+document.getElementById("btn-roll").addEventListener(
+  "touchstart",
+  (e) => {
+    e.preventDefault();
+    if (!gameOver) {
+      if (player.jumping) {
+        player.fastFall = true;
+      } else if (canRoll) {
+        roll();
+        canRoll = false;
+        setTimeout(() => {
+          canRoll = true;
+        }, 300);
+      }
     }
-  }
-}, { passive: false });
+  },
+  { passive: false }
+);
