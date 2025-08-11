@@ -681,7 +681,16 @@ async function endGame() {
       "Parabéns! Você entrou no Top 5! Digite seu nome:",
       "Lino"
     );
-    if (!playerName) playerName = "Anônimo";
+
+    if (!playerName) {
+      playerName = "Anônimo";
+    } else {
+      playerName = playerName
+        .replace(/[^a-zA-Z0-9À-ÿçÇ ]/g, "") // permite letras com acento, números e espaço
+        .trim()
+        .substring(0, 12); // máximo de 12 caracteres
+    }
+
     await addHighScore(playerName, score);
   }
 
