@@ -302,9 +302,9 @@ function spawnBoss() {
   boss.attackTimer = 0;
   boss.attackCount = 0;
   boss.cooldownTimer = 0;
-  // reset animation
   boss.frame = 0;
   boss.frameTimer = 0;
+  boss.hitPlayer = false; // ✅ ADICIONA ISSO
   soundTheme.playbackRate = 1.5;
 }
 
@@ -485,25 +485,29 @@ function update(deltaTime) {
           }
         }
         break;
-
       case "running":
         boss.x += boss.vx;
 
-        lives--;
-        updateLivesDisplay();
+        if (!boss.hitPlayer) {
+          lives--;
+          updateLivesDisplay();
 
-        if (lives <= 0) {
-          endGame();
-        } else {
-          player.invincible = true;
-          powerupTimer = 0;
-          blinkTimer = 0;
-          if (soundEnabled) soundDie.play();
+          if (lives <= 0) {
+            endGame();
+          } else {
+            player.invincible = true;
+            powerupTimer = 0;
+            blinkTimer = 0;
+            if (soundEnabled) soundDie.play();
+          }
+
+          boss.hitPlayer = true; // Garante que só perca vida uma vez
         }
 
         if (boss.x + boss.width < 0) {
           boss.active = false;
           boss.state = "idle";
+          boss.hitPlayer = false; // Resetar para próxima vez
           soundTheme.playbackRate = 1;
         }
         break;
