@@ -19,6 +19,7 @@ if ("serviceWorker" in navigator) {
 // ==== DOM
 const startScreen = document.getElementById("startScreen");
 const startButton = document.getElementById("startButton");
+const toggleSoundButton = document.getElementById("toggleSound");
 const gameCanvas = document.getElementById("gameCanvas");
 const scoreDisplay = document.getElementById("score");
 const gameOverScreen = document.getElementById("gameOverScreen");
@@ -89,6 +90,7 @@ bossStaticImg.src = "img/boss.png";
 
 // ==== SONS
 const soundTheme = new Audio("audio/theme.wav");
+let soundEnabled = true;
 soundTheme.loop = true;
 soundTheme.volume = 0.1;
 const soundJump = new Audio("audio/jump.ogg");
@@ -96,6 +98,17 @@ const soundDie = new Audio("audio/die.ogg");
 const soundPowerup = new Audio("audio/powerup.ogg");
 const soundCoin = new Audio("audio/coin.ogg");
 soundCoin.volume = 0.01; // ajuste se quiser mais alto/baixo
+toggleSoundButton.addEventListener("click", () => {
+  soundEnabled = !soundEnabled;
+
+  if (soundEnabled) {
+    soundTheme.volume = 0.1;
+    toggleSoundButton.innerText = "🔊 Som";
+  } else {
+    soundTheme.volume = 0;
+    toggleSoundButton.innerText = "🔇 Mudo";
+  }
+});
 
 // ==== ESTADO JOGADOR
 const player = {
@@ -123,6 +136,8 @@ const player = {
 let score = 0;
 let powerupEligibleCoins = 0; // Contador de moedas que valem para ativar powerup
 let gameOver = false;
+let lives = 3;
+const livesDisplay = document.getElementById("lives");
 let gameSpeed = 4;
 let chaoOffset = 0;
 let obstacles = [];
@@ -136,7 +151,7 @@ let canRoll = true; // <- permite uma rolagem por pressionamento
 let touchStartY = 0; // <- touch
 let touchEndY = 0; // <- touch
 
-const powerupDuration = 3000;
+const powerupDuration = 2000;
 const blinkInterval = 200;
 
 let highScores = [];
@@ -149,6 +164,10 @@ let explosion = {
   frameDelay: 5,
   frameTimer: 0,
 };
+
+function updateLivesDisplay() {
+  livesDisplay.innerText = `❤️ x${lives}`;
+}
 
 // ==== BOSS ====
 const boss = {
@@ -378,14 +397,25 @@ function update(deltaTime) {
 
   for (let o of obstacles) {
     if (!player.invincible && checkCollision(player, o)) {
-      // 👉 Ativa a explosão na posição do jogador
       explosion.active = true;
       explosion.frame = 0;
       explosion.frameTimer = 0;
       explosion.x = player.x;
       explosion.y = player.y;
 
-      endGame();
+      lives--;
+      updateLivesDisplay();
+
+      if (lives <= 0) {
+        endGame();
+      } else {
+        player.invincible = true;
+        powerupTimer = 0;
+        blinkTimer = 0;
+        if (soundEnabled) soundDie.play();
+      }
+
+      break; // impede múltiplas colisões ao mesmo tempo
     }
   }
 
@@ -395,7 +425,7 @@ function update(deltaTime) {
       scoreDisplay.innerText = `🪙 ${score}`;
       coins.splice(i, 1);
 
-      soundCoin.cloneNode().play(); // TOCA O SOM AO PEGAR MOEDA
+      if (soundEnabled) soundCoin.cloneNode().play();
 
       // Apenas moedas fora da chuva contam para o powerup
       if (!coinRainActive) {
@@ -459,29 +489,16 @@ function update(deltaTime) {
       case "running":
         boss.x += boss.vx;
 
-        // Pulo na cabeça derrota
-        if (checkCollision(player, boss)) {
-          if (player.vy > 0) {
-            boss.active = false;
-            boss.state = "dead";
-            soundTheme.playbackRate = 1;
-            score += 10;
-            scoreDisplay.innerText = `🪙 ${score}`;
-            explosion.active = true;
-            explosion.frame = 0;
-            explosion.frameTimer = 0;
-            explosion.x = boss.x;
-            explosion.y = boss.y;
-          } else {
-            if (!player.invincible) {
-              explosion.active = true;
-              explosion.frame = 0;
-              explosion.frameTimer = 0;
-              explosion.x = player.x;
-              explosion.y = player.y;
-              endGame();
-            }
-          }
+        lives--;
+        updateLivesDisplay();
+
+        if (lives <= 0) {
+          endGame();
+        } else {
+          player.invincible = true;
+          powerupTimer = 0;
+          blinkTimer = 0;
+          if (soundEnabled) soundDie.play();
         }
 
         if (boss.x + boss.width < 0) {
@@ -636,7 +653,7 @@ function jump() {
   if (!player.jumping && !player.rolling) {
     player.vy = JUMP_FORCE;
     player.jumping = true;
-    soundJump.play();
+    if (soundEnabled) soundJump.play();
   }
 }
 
@@ -661,13 +678,13 @@ function activatePowerup() {
   powerupTimer = 0;
   blinkTimer = 0;
   coinRainActive = true; // 🌧️ ativa a chuva de moedas
-  soundPowerup.play();
+  if (soundEnabled) soundPowerup.play();
   soundTheme.playbackRate = 1.5;
 }
 
 async function endGame() {
   gameOver = true;
-  soundDie.play();
+  if (soundEnabled) soundDie.play();
   soundTheme.pause();
   finalScoreSpan.innerText = score;
   gameOverScreen.classList.remove("hidden");
@@ -720,6 +737,8 @@ function startGame() {
 
   // Resetar pontuação e atualizar display
   score = 0;
+  lives = 3;
+  updateLivesDisplay();
   scoreDisplay.innerText = "🪙 0";
   powerupEligibleCoins = 0;
 
@@ -789,7 +808,12 @@ window.addEventListener("keydown", (e) => {
     }
   }
 
-  if ((e.code === "Enter" || e.code === "Space") && gameOver) startGame();
+  if (
+    (e.code === "Enter" || e.code === "Space") &&
+    (gameOver || !startScreen.classList.contains("hidden"))
+  ) {
+    startGame();
+  }
 });
 
 window.addEventListener("keyup", (e) => {
