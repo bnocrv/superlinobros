@@ -488,29 +488,39 @@ function update(deltaTime) {
       case "running":
         boss.x += boss.vx;
 
-        if (!boss.hitPlayer) {
-          lives--;
-          updateLivesDisplay();
+        if (
+          !boss.hitPlayer &&
+          !player.invincible &&
+          checkCollision(player, boss)
+        ) {
+          const playerBottom = player.y + player.height;
+          const bossTop = boss.y;
 
-          if (lives <= 0) {
-            endGame();
+          // Verifica se a colisão veio de cima
+          if (playerBottom <= bossTop + 20 && player.vy > 0) {
+            // ✅ Jogador pulou em cima do boss
+            boss.active = false;
+            boss.hitPlayer = true;
+            soundTheme.playbackRate = 1;
+            score += 5; // ou o que quiser
+            player.vy = JUMP_FORCE / 2; // rebote pra cima
           } else {
-            player.invincible = true;
-            powerupTimer = 0;
-            blinkTimer = 0;
-            if (soundEnabled) soundDie.play();
+            // ❌ Colisão normal — perde vida
+            lives--;
+            updateLivesDisplay();
+
+            if (lives <= 0) {
+              endGame();
+            } else {
+              player.invincible = true;
+              powerupTimer = 0;
+              blinkTimer = 0;
+              if (soundEnabled) soundDie.play();
+            }
+
+            boss.hitPlayer = true;
           }
-
-          boss.hitPlayer = true; // Garante que só perca vida uma vez
         }
-
-        if (boss.x + boss.width < 0) {
-          boss.active = false;
-          boss.state = "idle";
-          boss.hitPlayer = false; // Resetar para próxima vez
-          soundTheme.playbackRate = 1;
-        }
-        break;
     }
 
     // **OBS:** Não há mais armas do boss para mover/checar colisão — isso foi removido conforme pedido
