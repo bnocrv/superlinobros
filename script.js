@@ -115,7 +115,7 @@ const player = {
   x: 100,
   y: GROUND_Y - 92,
   width: 120,
-  height: 92,
+  height: 135,
   vy: 0,
   jumping: false,
   rolling: false,
