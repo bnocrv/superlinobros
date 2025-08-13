@@ -59,7 +59,6 @@ Esse projeto foi criado com o objetivo de aplicar conhecimentos práticos em ló
 
 # 🧪 Melhorias futuras
 
-- Sistema de vidas
 - Novos power-ups
 - Mais animações, personagens e fases
 - Firebase Authentication para login de jogadores
