@@ -80,9 +80,14 @@ Esse projeto foi desenvolvido como parte dos meus estudos de ADS (na Afya) e JS 
 
 ---
 
-# ⚙️ Atualizações (09/08/2025)
+# ⚙️ Últimas Atualizações (08/2025)
 - Novos comandos implementados: rolamento | acelerar pouso. 
-- Adversários reformulados.
-- Explosão final adicionada.
-- Primeiro boss adicionado
+- Adversários reformulados
+- Explosão final
+- 1° boss
+- Chuva de moedas 
+- Sistema de vidas 
+- Ativar/desativar som
+
+
 
