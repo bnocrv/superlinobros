@@ -114,8 +114,8 @@ toggleSoundButton.addEventListener("click", () => {
 const player = {
   x: 100,
   y: GROUND_Y - 92,
-width: 100, // largura
-height: 92, // altura
+  width: 100,
+  height: 92,
   vy: 0,
   jumping: false,
   rolling: false,
@@ -324,8 +324,8 @@ function isCoinTooCloseToObstacle(x, y, width, height) {
 function spawnCoin() {
   const minY = GROUND_Y - 180;
   const maxY = GROUND_Y - 100;
-  const coinWidth = 100;
-  const coinHeight = 70;
+  const coinWidth = 70;
+  const coinHeight = 50;
   let y = Math.random() * (maxY - minY) + minY;
   let x = canvas.width;
 
