@@ -114,8 +114,8 @@ toggleSoundButton.addEventListener("click", () => {
 const player = {
   x: 100,
   y: GROUND_Y - 92,
-  width: 120,
-  height: 135,
+width: 120, // largura
+height: 92, // altura
   vy: 0,
   jumping: false,
   rolling: false,
