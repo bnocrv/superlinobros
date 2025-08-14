@@ -1,3 +1,27 @@
+/* GUIA PARA O DESENVOLVIMENTO DO JOGO
+O QUE MEXER PARA CADA COISA:
+Você quer...	Mexa em...
+
+🎵 Trocar música	Seção 6 (sons)
+🕹️ Adicionar controle novo	Seção 18 (eventos)
+👤 Mudar personagem	Seções 5 (sprites), 7 (player), 13 (draw), talvez 16 (startGame)
+👾 Adicionar chefe novo	Seções 5 (sprites), 9 (boss), 12 (update), 13 (draw)
+🧱 Mudar obstáculos	Seções 5 (sprites), 11 (spawnObstacle), talvez 12 (colisão)
+💰 Alterar moedas	Seções 5 (sprites), 11 (spawnCoin), 12 (coleta)
+🧠 Mudar dificuldade/fases	Seções 8 (variáveis), 12 (update), talvez 16 (startGame)
+🏁 Criar fases diferentes	Seções 5, 8, 12, 13, 16
+🎨 Trocar fundo	Seções 5 (fundo), 13 (draw)
+💾 Mudar ranking online	Seções 10 (Firestore), talvez 15 (endGame) */
+
+// ==== IMPORTS ------------------------------------------------------------------------------------------
+/* ✅ 1) Imports e Firebase
+📁 Arquivo: início do seu script
+🔧 Serve para: carregar dados do Firebase (placares, etc.)
+
+Só mexer quando precisar:
+- Mudar o banco de dados (outro projeto Firebase)
+- Adicionar um novo tipo de dado a ser salvo (ex: personagem preferido)  */
+
 import {
   collection,
   query,
@@ -9,6 +33,13 @@ import {
 
 import { db } from "./firebase.js"; // Importa Firestore pronto
 
+
+
+// ==== SERVICE WORKER ------------------------------------------------------------------------------------------
+/* ✅ 2) Service Worker
+🔧 Serve para: permitir funcionamento offline (PWA)
+Só mexer quando precisar, a menos que for adicionar funcionalidades offline específicas. */
+
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker
     .register("/service-worker.js")
@@ -16,7 +47,17 @@ if ("serviceWorker" in navigator) {
     .catch((error) => console.error("❌ Erro ao registrar SW:", error));
 }
 
-// ==== DOM
+
+
+// ==== DOM ------------------------------------------------------------------------------------------
+/* ✅ 3) DOM Elements
+📁 const startScreen = ... até const ctx = canvas.getContext("2d");
+🔧 Serve para: conectar elementos do HTML ao JavaScript
+Mexer aqui quando precisar adicionar ou remover:
+- Botões (ex: botão de troca de personagem)
+- Novas telas (ex: tela de seleção de fase)
+- Mostrar vidas, moedas, scores, etc. */
+
 const startScreen = document.getElementById("startScreen");
 const startButton = document.getElementById("startButton");
 const toggleSoundButton = document.getElementById("toggleSound");
@@ -26,18 +67,39 @@ const gameOverScreen = document.getElementById("gameOverScreen");
 const restartButton = document.getElementById("restartButton");
 const finalScoreSpan = document.getElementById("finalScore");
 const highScoresDiv = document.getElementById("highScores");
-
 const canvas = gameCanvas;
 const ctx = canvas.getContext("2d");
 const isMobile = window.innerWidth < 768;
 
-// ==== CONSTANTES
+
+
+// ==== CONSTANTES ------------------------------------------------------------------------------------------
+/* ✅ 4) CONSTANTES DO JOGO
+📁 const GRAVITY, JUMP_FORCE, etc.
+🔧 Serve para: configurar física do jogo
+
+Mexer aqui para:
+- Ajustar gravidade
+- Mudar força do pulo
+- Alterar altura do chão */
+
 const GRAVITY = 0.6;
 const FAST_FALL_GRAVITY = 1.5;
 const JUMP_FORCE = -14;
 const GROUND_Y = canvas.height - 70;
 
-// ==== IMAGENS
+
+
+// ==== IMAGENS ------------------------------------------------------------------------------------------
+/* ✅ 5) IMAGENS / SPRITES
+📁 Todas as new Image()
+🔧 Serve para: carregar imagens usadas no jogo
+Mexer aqui para:
+- Adicionar novos personagens
+- Trocar imagens do fundo
+- Adicionar novas fases com visuais diferentes
+- Trocar chefes, obstáculos, moedas... */
+
 const runFrames = [];
 for (let i = 1; i <= 6; i++) {
   const img = new Image();
@@ -76,7 +138,7 @@ for (let i = 1; i <= 5; i++) {
   explosionFrames.push(img);
 }
 
-// ==== BOSS SPRITES (NOVO)
+// Boss Sprites (NOVO)
 const bossFrames = [];
 for (let i = 1; i <= 3; i++) {
   const img = new Image();
@@ -88,7 +150,16 @@ for (let i = 1; i <= 3; i++) {
 const bossStaticImg = new Image();
 bossStaticImg.src = "img/boss.png";
 
-// ==== SONS
+
+ 
+// ==== SONS ------------------------------------------------------------------------------------------
+/* ✅ 6) SONS / ÁUDIO
+📁 const soundTheme = new Audio(...), etc.
+🔧 Serve para: controlar música e efeitos
+Mexer aqui para:
+- Adicionar músicas novas
+- Trocar sons de ações (pulo, dano, powerup ...) */
+
 const soundTheme = new Audio("audio/theme.wav");
 let soundEnabled = true;
 soundTheme.loop = true;
@@ -110,7 +181,17 @@ toggleSoundButton.addEventListener("click", () => {
   }
 });
 
-// ==== ESTADO JOGADOR
+
+
+// ==== ESTADO JOGADOR ------------------------------------------------------------------------------------------
+/* ✅ 7) ESTADO DO JOGADOR
+📁 const player = { ... }
+🔧 Serve para: definir posição, animação, hitbox e estados do personagem
+Mexa aqui para:
+- Adicionar atributos novos ao jogador (ex: tipo de personagem)
+- Ajustar altura, velocidade de rolagem, hitbox
+- Implementar personagens com comportamento diferente */
+
 const player = {
   x: 100,
   y: GROUND_Y - 92,
@@ -132,7 +213,17 @@ const player = {
   visible: true,
 };
 
-// ==== VARIÁVEIS DO JOGO
+
+ 
+// ==== VARIÁVEIS DO JOGO ------------------------------------------------------------------------------------------
+/* ✅ 8) VARIÁVEIS DO JOGO
+📁 let score = 0; até let explosion = {...}
+🔧 Serve para: controlar pontuação, vidas, moedas, velocidade, etc.
+Mexer aqui para:
+- Criar controle de fases
+- Adicionar mecânicas novas (como boost de velocidade, modo turbo)
+- Mudar valores iniciais (vidas, velocidade) */
+
 let score = 0;
 let powerupEligibleCoins = 0; // Contador de moedas que valem para ativar powerup
 let gameOver = false;
@@ -169,7 +260,17 @@ function updateLivesDisplay() {
   livesDisplay.innerText = `❤️ x${lives}`;
 }
 
-// ==== BOSS ====
+
+
+// ==== BOSS ==== ------------------------------------------------------------------------------------------
+/* ✅ 9) BOSS (Chefão)
+📁 const boss = { ... }
+🔧 Serve para: configurar o comportamento e estado do chefe
+Mexer aqui para:
+- Criar diferentes tipos de chefes
+- Adicionar novos padrões de ataque
+- Mudar o visual ou a lógica do boss */
+
 const boss = {
   x: canvas.width,
   y: GROUND_Y - 120,
@@ -190,9 +291,18 @@ const boss = {
   // image: fallback se precisar
   image: bossStaticImg,
 };
-// OBS: REMOVIDO bossWeapons e spawnBossWeapon (poder de jogar item) conforme pedido
+// OBS: REMOVIDO bossWeapons e spawnBossWeapon (poder de jogar item) 
 
-// ==== FUNÇÕES FIRESTORE
+
+
+// ==== FUNÇÕES FIRESTORE ------------------------------------------------------------------------------------------
+/* ✅ 10) FIRESTORE (placares)
+📁 async function fetchHighScores()
+🔧 Serve para: mostrar e salvar ranking online
+Só mexer aqui quando for:
+- Mudar regras do ranking (ex: mostrar top 10)
+- Armazenar dados extras (ex: personagem usado) */
+
 async function fetchHighScores() {
   try {
     const scoresRef = collection(db, "highscores");
@@ -256,7 +366,66 @@ function escapeHTML(str) {
   });
 }
 
+
+
 // ==== FUNÇÕES DO JOGO
+/* ✅ 11) spawnObstacle / spawnCoin
+📁 funções que geram moedas e obstáculos
+🔧 Serve para: definir o que aparece durante o jogo
+Mexa para:
+- Adicionar obstáculos novos
+- Mudar lógica de posicionamento
+- Alterar frequência
+------------------------------------------------------------------------------------------
+✅ 12) update(deltaTime)
+📁 A função principal do jogo
+🔧 Serve para: atualizar tudo: movimentação, colisão, pontuação, boss, etc.
+Mexer aqui com cuidado. Usar para:
+- Adicionar fases diferentes conforme pontuação
+- Aumentar dificuldade progressivamente
+- Trocar música/fundo/conteúdo com o tempo
+------------------------------------------------------------------------------------------
+✅ 13) draw()
+📁 função que desenha o jogo
+🔧 Serve para: renderizar sprites, fundo, jogador, moedas, obstáculos
+Mexer aqui para:
+- Adicionar novos elementos visuais (personagem, HUD)
+- Trocar sprites dependendo da fase/personagem
+------------------------------------------------------------------------------------------
+✅ 14) jump(), roll(), activatePowerup()
+📁 funções de ação do jogador
+🔧 Serve para: movimentar o personagem
+Mexer para:
+- Modificar como pulo ou rolagem funcionam
+- Adicionar novas habilidades
+------------------------------------------------------------------------------------------
+✅ 15) endGame()
+📁 quando o jogador perde
+🔧 Serve para: mostrar score final e salvar ranking
+Mexer aqui para:
+- Criar tela personalizada de game over
+- Adicionar reinício com diferentes condições
+------------------------------------------------------------------------------------------
+✅ 16) startGame()
+📁 início de partida
+🔧 Serve para: resetar tudo e iniciar o jogo
+Mexer para:
+- Definir fase inicial
+- Sortear personagem aleatório
+- Tocar música diferente dependendo do modo
+------------------------------------------------------------------------------------------
+✅ 17) gameLoop()
+📁 loop principal
+🔧 Serve para: rodar update() + draw() em cada frame
+Normalmente não precisa mexer.
+------------------------------------------------------------------------------------------
+✅ 18) Eventos (keydown, touch, etc)
+📁 controlam ações do jogador
+🔧 Serve para: movimentação com teclado ou touch
+Mexer para:
+- Adicionar atalhos
+- Suporte a gamepad
+- Criar novo botão de fase ou personagem */
 
 function spawnObstacle() {
   const tipo = Math.random();
