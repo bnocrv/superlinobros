@@ -5,18 +5,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Super Lino BROS</title>
 
+    <!-- 📜 Manifesto para transformar em aplicativo PWA -->
     <link rel="manifest" href="manifest.json" />
+
+    <!-- 🎨 Cor da barra de status no celular -->
     <meta name="theme-color" content="#000000" />
+
+    <!-- 📄 Descrição para SEO e compartilhamento -->
     <meta
       name="description"
       content="Ajude o Lino a chegar em casa antes que as contas acabem com tudo!"
     />
+
+    <!-- 📱 Ícone para atalhos no celular -->
     <link rel="apple-touch-icon" href="icons/icon-192.png" />
+
+    <!-- 🎨 Arquivo de estilos -->
     <link rel="stylesheet" href="style.css" />
   </head>
 
   <body>
+    <!-- 🎮 Container principal do jogo -->
     <div id="gameContainer">
+      <!-- 🏁 Tela inicial -->
       <div id="startScreen">
         <h1>SUPER LINO BROS</h1>
         <br />
@@ -26,17 +37,24 @@
         </h2>
         <br />
         <h3>Criado por Bruno Carvalho<br />(Em desenvolvimento)</h3>
+
+        <!-- ▶️ Botão para iniciar o jogo -->
         <button id="startButton">Jogar</button>
       </div>
 
+      <!-- 🖼️ Área onde o jogo é desenhado -->
       <canvas id="gameCanvas" width="800" height="400"></canvas>
 
-           <div id="lives">❤️ x3</div>
-        <div id="score">🪙 0</div>
-        <button id="toggleSound" class="hud-button">🔊 Som</button>
+      <!-- ❤️ Vidas do jogador -->
+      <div id="lives">❤️ x3</div>
 
-      </div>
+      <!-- 🪙 Placar de pontos -->
+      <div id="score">🪙 0</div>
 
+      <!-- 🔊 Botão liga/desliga som -->
+      <button id="toggleSound" class="hud-button">🔊 Som</button>
+
+      <!-- 💀 Tela de Game Over -->
       <div id="gameOverScreen" class="hidden">
         <h1>Game Over</h1>
         <p>Você fez <span id="finalScore">0</span> pontos!</p>
@@ -45,12 +63,15 @@
       </div>
     </div>
 
+    <!-- 📱 Controles para celular -->
     <div id="mobile-controls">
       <button id="btn-jump">⬆</button>
+      <!-- Pular -->
       <button id="btn-roll">⬇</button>
+      <!-- Rolar -->
     </div>
 
+    <!-- 📜 Script principal -->
     <script type="module" src="./script.js"></script>
-
   </body>
 </html>
