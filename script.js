@@ -1,27 +1,8 @@
-/* GUIA PARA O DESENVOLVIMENTO DO JOGO
-O QUE MEXER PARA CADA COISA:
-Você quer...	Mexa em...
+/* =====================================================================================
+   GUIA RÁPIDO
+===================================================================================== */
 
-🎵 Trocar música	Seção 6 (sons)
-🕹️ Adicionar controle novo	Seção 18 (eventos)
-👤 Mudar personagem	Seções 5 (sprites), 7 (player), 13 (draw), talvez 16 (startGame)
-👾 Adicionar chefe novo	Seções 5 (sprites), 9 (boss), 12 (update), 13 (draw)
-🧱 Mudar obstáculos	Seções 5 (sprites), 11 (spawnObstacle), talvez 12 (colisão)
-💰 Alterar moedas	Seções 5 (sprites), 11 (spawnCoin), 12 (coleta)
-🧠 Mudar dificuldade/fases	Seções 8 (variáveis), 12 (update), talvez 16 (startGame)
-🏁 Criar fases diferentes	Seções 5, 8, 12, 13, 16
-🎨 Trocar fundo	Seções 5 (fundo), 13 (draw)
-💾 Mudar ranking online	Seções 10 (Firestore), talvez 15 (endGame) */
-
-// ==== IMPORTS ------------------------------------------------------------------------------------------
-/* ✅ 1) Imports e Firebase
-📁 Arquivo: início do seu script
-🔧 Serve para: carregar dados do Firebase (placares, etc.)
-
-Só mexer quando precisar:
-- Mudar o banco de dados (outro projeto Firebase)
-- Adicionar um novo tipo de dado a ser salvo (ex: personagem preferido)  */
-
+// === 1) IMPORTAÇÕES (Firebase) ===========================================
 import {
   collection,
   query,
@@ -30,1035 +11,782 @@ import {
   getDocs,
   addDoc,
 } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+import { db } from "./firebase.js";
 
-import { db } from "./firebase.js"; // Importa Firestore pronto
+// === 2) CONFIGURAÇÕES INICIAIS ======================================================
+// Elementos HTML
+const telaInicio = document.getElementById("startScreen");
+const botaoIniciar = document.getElementById("startButton");
+const botaoAlternarSom = document.getElementById("toggleSound");
+const telaJogo = document.getElementById("gameCanvas");
+const textoPontuacao = document.getElementById("score");
+const telaFimDeJogo = document.getElementById("gameOverScreen");
+const botaoReiniciar = document.getElementById("restartButton");
+const textoPontuacaoFinal = document.getElementById("finalScore");
+const caixaRanking = document.getElementById("highScores");
+const textoVidas = document.getElementById("lives");
 
-
-
-// ==== SERVICE WORKER ------------------------------------------------------------------------------------------
-/* ✅ 2) Service Worker
-🔧 Serve para: permitir funcionamento offline (PWA)
-Só mexer quando precisar, a menos que for adicionar funcionalidades offline específicas. */
-
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker
-    .register("/service-worker.js")
-    .then(() => console.log("✅ Service Worker registrado!"))
-    .catch((error) => console.error("❌ Erro ao registrar SW:", error));
-}
-
-
-
-// ==== DOM ------------------------------------------------------------------------------------------
-/* ✅ 3) DOM Elements
-📁 const startScreen = ... até const ctx = canvas.getContext("2d");
-🔧 Serve para: conectar elementos do HTML ao JavaScript
-Mexer aqui quando precisar adicionar ou remover:
-- Botões (ex: botão de troca de personagem)
-- Novas telas (ex: tela de seleção de fase)
-- Mostrar vidas, moedas, scores, etc. */
-
-const startScreen = document.getElementById("startScreen");
-const startButton = document.getElementById("startButton");
-const toggleSoundButton = document.getElementById("toggleSound");
-const gameCanvas = document.getElementById("gameCanvas");
-const scoreDisplay = document.getElementById("score");
-const gameOverScreen = document.getElementById("gameOverScreen");
-const restartButton = document.getElementById("restartButton");
-const finalScoreSpan = document.getElementById("finalScore");
-const highScoresDiv = document.getElementById("highScores");
-const canvas = gameCanvas;
+const canvas = telaJogo;
 const ctx = canvas.getContext("2d");
-const isMobile = window.innerWidth < 768;
+const eMobile = window.innerWidth < 768;
 
+// === 3) CONSTANTES DO JOGO ==========================================================
+const GRAVIDADE = 0.6;
+const GRAVIDADE_QUEDA_RAPIDA = 1.5;
+const FORCA_PULO = -14;
+const CHAO_Y = canvas.height - 70;
 
-
-// ==== CONSTANTES ------------------------------------------------------------------------------------------
-/* ✅ 4) CONSTANTES DO JOGO
-📁 const GRAVITY, JUMP_FORCE, etc.
-🔧 Serve para: configurar física do jogo
-
-Mexer aqui para:
-- Ajustar gravidade
-- Mudar força do pulo
-- Alterar altura do chão */
-
-const GRAVITY = 0.6;
-const FAST_FALL_GRAVITY = 1.5;
-const JUMP_FORCE = -14;
-const GROUND_Y = canvas.height - 70;
-
-
-
-// ==== IMAGENS ------------------------------------------------------------------------------------------
-/* ✅ 5) IMAGENS / SPRITES
-📁 Todas as new Image()
-🔧 Serve para: carregar imagens usadas no jogo
-Mexer aqui para:
-- Adicionar novos personagens
-- Trocar imagens do fundo
-- Adicionar novas fases com visuais diferentes
-- Trocar chefes, obstáculos, moedas... */
-
-const runFrames = [];
-for (let i = 1; i <= 6; i++) {
+// === 4) CARREGAMENTO DE IMAGENS =====================================================
+// Personagem
+const framesCorrida = Array.from({ length: 6 }, (_, i) => {
   const img = new Image();
-  img.src = `img/corpo_run${i}.png`;
-  runFrames.push(img);
-}
-const jumpSprite = new Image();
-jumpSprite.src = "img/corpo_jump.png";
-
-const rollFrames = []; // NOVO
-for (let i = 1; i <= 4; i++) {
-  const img = new Image();
-  img.src = `img/corpo_down${i}.png`;
-  rollFrames.push(img);
-}
-
-const rosto = new Image();
-rosto.src = "img/rosto.png";
-const chao = new Image();
-chao.src = "img/chao.png";
-const fundo = new Image();
-fundo.src = "img/fundo.png";
-const moedaImg = new Image();
-moedaImg.src = "img/moeda.png";
-const obstaculoChaoImg = new Image();
-obstaculoChaoImg.src = "img/obstaculo.png";
-const obstaculoVoadorImg = new Image();
-obstaculoVoadorImg.src = "img/obstaculo_voador.png";
-const obstaculoPosteImg = new Image();
-obstaculoPosteImg.src = "img/obstaculo_poste.png";
-
-const explosionFrames = [];
-for (let i = 1; i <= 5; i++) {
-  const img = new Image();
-  img.src = `img/flash0${i}.png`;
-  explosionFrames.push(img);
-}
-
-// Boss Sprites (NOVO)
-const bossFrames = [];
-for (let i = 1; i <= 3; i++) {
-  const img = new Image();
-  img.src = `img/boss${i}.png`; // boss1.png, boss2.png, boss3.png
-  bossFrames.push(img);
-}
-
-// mantenho a imagem antiga apenas como fallback (não usada para animação)
-const bossStaticImg = new Image();
-bossStaticImg.src = "img/boss.png";
-
-
- 
-// ==== SONS ------------------------------------------------------------------------------------------
-/* ✅ 6) SONS / ÁUDIO
-📁 const soundTheme = new Audio(...), etc.
-🔧 Serve para: controlar música e efeitos
-Mexer aqui para:
-- Adicionar músicas novas
-- Trocar sons de ações (pulo, dano, powerup ...) */
-
-const soundTheme = new Audio("audio/theme.wav");
-let soundEnabled = true;
-soundTheme.loop = true;
-soundTheme.volume = 0.1;
-const soundJump = new Audio("audio/jump.ogg");
-const soundDie = new Audio("audio/die.ogg");
-const soundPowerup = new Audio("audio/powerup.ogg");
-const soundCoin = new Audio("audio/coin.ogg");
-soundCoin.volume = 0.01; // ajuste se quiser mais alto/baixo
-toggleSoundButton.addEventListener("click", () => {
-  soundEnabled = !soundEnabled;
-
-  if (soundEnabled) {
-    soundTheme.volume = 0.1;
-    toggleSoundButton.innerText = "🔊 Som";
-  } else {
-    soundTheme.volume = 0;
-    toggleSoundButton.innerText = "🔇 Mudo";
-  }
+  img.src = `img/corpo_run${i + 1}.png`;
+  return img;
 });
 
+const spritePulo = new Image();
+spritePulo.src = "img/corpo_jump.png";
 
+const framesRolagem = Array.from({ length: 4 }, (_, i) => {
+  const img = new Image();
+  img.src = `img/corpo_down${i + 1}.png`;
+  return img;
+});
 
-// ==== ESTADO JOGADOR ------------------------------------------------------------------------------------------
-/* ✅ 7) ESTADO DO JOGADOR
-📁 const player = { ... }
-🔧 Serve para: definir posição, animação, hitbox e estados do personagem
-Mexa aqui para:
-- Adicionar atributos novos ao jogador (ex: tipo de personagem)
-- Ajustar altura, velocidade de rolagem, hitbox
-- Implementar personagens com comportamento diferente */
+// Cenário
+const imgRosto = new Image();
+imgRosto.src = "img/rosto.png";
+const imgChao = new Image();
+imgChao.src = "img/chao.png";
+const imgFundo = new Image();
+imgFundo.src = "img/fundo.png";
 
-const player = {
+// Itens
+const imgMoeda = new Image();
+imgMoeda.src = "img/moeda.png";
+const imgObstaculoChao = new Image();
+imgObstaculoChao.src = "img/obstaculo.png";
+const imgObstaculoVoador = new Image();
+imgObstaculoVoador.src = "img/obstaculo_voador.png";
+const imgObstaculoPoste = new Image();
+imgObstaculoPoste.src = "img/obstaculo_poste.png";
+
+// Efeitos
+const framesExplosao = Array.from({ length: 5 }, (_, i) => {
+  const img = new Image();
+  img.src = `img/flash0${i + 1}.png`;
+  return img;
+});
+
+// Chefe
+const framesChefe = Array.from({ length: 3 }, (_, i) => {
+  const img = new Image();
+  img.src = `img/boss${i + 1}.png`;
+  return img;
+});
+const imgChefeParado = new Image();
+imgChefeParado.src = "img/boss.png";
+
+// === 5) SONS DO JOGO ================================================================
+const somTema = new Audio("audio/theme.wav");
+let somLigado = true;
+somTema.loop = true;
+somTema.volume = 0.1;
+
+const somPulo = new Audio("audio/jump.ogg");
+const somMorte = new Audio("audio/die.ogg");
+const somPowerup = new Audio("audio/powerup.ogg");
+const somMoeda = new Audio("audio/coin.ogg");
+somMoeda.volume = 0.01;
+
+botaoAlternarSom.addEventListener("click", () => {
+  somLigado = !somLigado;
+  botaoAlternarSom.innerText = somLigado ? "🔊 Som" : "🔇 Mudo";
+  somTema.volume = somLigado ? 0.1 : 0;
+});
+
+// === 6) ESTADO DO JOGADOR (CORRIGIDO) ===============================================
+const jogador = {
   x: 100,
-  y: GROUND_Y - 92,
-  width: 100,
-  height: 92,
-  vy: 0,
-  jumping: false,
-  rolling: false,
-  rollFrame: 0,
-  rollFrameDelay: 7, // Tempo da rolagem
-  rollFrameTimer: 2,
-  frame: 0,
-  frameDelay: 5,
-  // Hitbox atual usada para colisões
-  hitbox: { offsetX: 10, offsetY: 15, width: 45, height: 70 },
-  // Hitbox original (em pé), usada para restaurar depois da rolagem
-  originalHitbox: { offsetX: 10, offsetY: 15, width: 45, height: 70 },
-  invincible: false,
-  visible: true,
+  y: CHAO_Y - 80,
+  largura: 120,
+  altura: 65,
+  velocidadeY: 0,
+  pulando: false,
+  rolando: false,
+  quadroRolagem: 0,
+  atrasoQuadroRolagem: 7,
+  temporizadorRolagem: 2,
+  quadro: 0,
+  atrasoQuadro: 5,
+
+  // CAIXA DE COLISÃO CORRIGIDA (nomes consistentes)
+  caixaColisao: {
+    deslocX: 20,
+    deslocY: 10,
+    largura: 40,
+    altura: 55,
+  },
+
+  // CÓPIA ORIGINAL PARA RESTAURAR
+  caixaColisaoOriginal: {
+    deslocX: 20,
+    deslocY: 10,
+    largura: 40,
+    altura: 55,
+  },
+
+  invencivel: false,
+  visivel: true,
+  quedaRapida: false,
 };
 
+// === 7) VARIÁVEIS DO JOGO ===========================================================
+let pontuacao = 0;
+let moedasParaPowerup = 0;
+let jogoTerminado = false;
+let vidas = 3;
+let velocidadeJogo = 4;
+let deslocChao = 0;
+let obstaculos = [];
+let moedas = [];
+let tempoObstaculo = 0;
+let tempoMoeda = 0;
+let tempoPowerup = 0;
+let chuvaDeMoedasAtiva = false;
+let tempoPiscar = 0;
+let podeRolar = true;
+let toqueInicioY = 0;
+let toqueFimY = 0;
 
- 
-// ==== VARIÁVEIS DO JOGO ------------------------------------------------------------------------------------------
-/* ✅ 8) VARIÁVEIS DO JOGO
-📁 let score = 0; até let explosion = {...}
-🔧 Serve para: controlar pontuação, vidas, moedas, velocidade, etc.
-Mexer aqui para:
-- Criar controle de fases
-- Adicionar mecânicas novas (como boost de velocidade, modo turbo)
-- Mudar valores iniciais (vidas, velocidade) */
+const duracaoPowerup = 2000;
+const intervaloPiscar = 200;
+let ranking = [];
 
-let score = 0;
-let powerupEligibleCoins = 0; // Contador de moedas que valem para ativar powerup
-let gameOver = false;
-let lives = 3;
-const livesDisplay = document.getElementById("lives");
-let gameSpeed = 4;
-let chaoOffset = 0;
-let obstacles = [];
-let coins = [];
-let obstacleTimer = 0;
-let coinTimer = 0;
-let powerupTimer = 0;
-let coinRainActive = false; // controla a chuva de moedas
-let blinkTimer = 0;
-let canRoll = true; // <- permite uma rolagem por pressionamento
-let touchStartY = 0; // <- touch
-let touchEndY = 0; // <- touch
-
-const powerupDuration = 2000;
-const blinkInterval = 200;
-
-let highScores = [];
-
-let explosion = {
-  active: false,
-  frame: 0,
+// Efeito de explosão
+let explosao = {
+  ativo: false,
+  quadro: 0,
   x: 0,
   y: 0,
-  frameDelay: 5,
-  frameTimer: 0,
+  atrasoQuadro: 5,
+  temporizadorQuadro: 0,
 };
 
-function updateLivesDisplay() {
-  livesDisplay.innerText = `❤️ x${lives}`;
-}
-
-
-
-// ==== BOSS ==== ------------------------------------------------------------------------------------------
-/* ✅ 9) BOSS (Chefão)
-📁 const boss = { ... }
-🔧 Serve para: configurar o comportamento e estado do chefe
-Mexer aqui para:
-- Criar diferentes tipos de chefes
-- Adicionar novos padrões de ataque
-- Mudar o visual ou a lógica do boss */
-
-const boss = {
+// === 8) CHEFE DO JOGO ===============================================================
+const chefe = {
   x: canvas.width,
-  y: GROUND_Y - 120,
-  width: 120,
-  height: 120,
-  vx: 0,
-  state: "idle",
-  active: false,
-  attackTimer: 0,
-  attackInterval: 1000,
-  attackCount: 0,
-  maxAttacks: 3,
-  cooldownTimer: 0,
-  // ANIMAÇÃO DO CHEFE (NOVO)
-  frame: 0,
-  frameDelay: 10,
-  frameTimer: 0,
-  // image: fallback se precisar
-  image: bossStaticImg,
+  y: CHAO_Y - 120,
+  largura: 120,
+  altura: 120,
+  velocidadeX: 0,
+  estado: "parado",
+  ativo: false,
+  tempoAtaque: 0,
+  intervaloAtaque: 1000,
+  contagemAtaques: 0,
+  maxAtaques: 3,
+  tempoRecarga: 0,
+  quadro: 0,
+  atrasoQuadro: 10,
+  temporizadorQuadro: 0,
+  imagem: imgChefeParado,
+  atingiuJogador: false,
 };
-// OBS: REMOVIDO bossWeapons e spawnBossWeapon (poder de jogar item) 
 
-
-
-// ==== FUNÇÕES FIRESTORE ------------------------------------------------------------------------------------------
-/* ✅ 10) FIRESTORE (placares)
-📁 async function fetchHighScores()
-🔧 Serve para: mostrar e salvar ranking online
-Só mexer aqui quando for:
-- Mudar regras do ranking (ex: mostrar top 10)
-- Armazenar dados extras (ex: personagem usado) */
-
-async function fetchHighScores() {
+// === 9) FUNÇÕES DE RANKING (Firestore - opcional) ===================================
+async function buscarRanking() {
   try {
-    const scoresRef = collection(db, "highscores");
-    const q = query(scoresRef, orderBy("score", "desc"), limit(5));
-    const snapshot = await getDocs(q);
+    const refScores = collection(db, "highscores");
+    const q = query(refScores, orderBy("score", "desc"), limit(5));
+    const snap = await getDocs(q);
 
-    highScores = [];
-    snapshot.forEach((doc) => {
-      highScores.push(doc.data());
-    });
-
-    displayHighScores();
-  } catch (err) {
-    console.error("Erro ao buscar highscores:", err);
+    ranking = [];
+    snap.forEach((doc) => ranking.push(doc.data()));
+    mostrarRanking();
+  } catch (erro) {
+    console.error("Erro ao buscar ranking:", erro);
   }
 }
 
-async function addHighScore(name, score) {
+async function adicionarRanking(nome, pontos) {
   try {
-    const scoresRef = collection(db, "highscores");
-    await addDoc(scoresRef, { name, score });
-  } catch (err) {
-    console.error("Erro ao adicionar highscore:", err);
+    const refScores = collection(db, "highscores");
+    await addDoc(refScores, { name: nome, score: pontos });
+  } catch (erro) {
+    console.error("Erro ao adicionar ranking:", erro);
   }
 }
 
-function displayHighScores() {
-  if (!highScoresDiv) return;
+function mostrarRanking() {
+  if (!caixaRanking) return;
 
-  if (highScores.length === 0) {
-    highScoresDiv.innerHTML = "<p>Nenhuma pontuação ainda.</p>";
-    return;
-  }
-
-  highScoresDiv.innerHTML = `
-    <h3>🏆 Top 5 Pontuações:</h3>
-    <ol>
-      ${highScores
-        .map((p) => `<li>${escapeHTML(p.name)}: ${p.score} 🪙</li>`)
-        .join("")}
-    </ol>
-  `;
+  caixaRanking.innerHTML =
+    ranking.length === 0
+      ? "<p>Nenhuma pontuação ainda.</p>"
+      : `
+      <h3>🏆 Top 5 Pontuações:</h3>
+      <ol>
+        ${ranking.map((p) => `<li>${p.name}: ${p.score} 🪙</li>`).join("")}
+      </ol>
+    `;
 }
 
-function escapeHTML(str) {
-  return str.replace(/[&<>"']/g, (m) => {
-    switch (m) {
-      case "&":
-        return "&amp;";
-      case "<":
-        return "&lt;";
-      case ">":
-        return "&gt;";
-      case '"':
-        return "&quot;";
-      case "'":
-        return "&#39;";
-      default:
-        return m;
-    }
-  });
-}
-
-
-
-// ==== FUNÇÕES DO JOGO
-/* ✅ 11) spawnObstacle / spawnCoin
-📁 funções que geram moedas e obstáculos
-🔧 Serve para: definir o que aparece durante o jogo
-Mexa para:
-- Adicionar obstáculos novos
-- Mudar lógica de posicionamento
-- Alterar frequência
-------------------------------------------------------------------------------------------
-✅ 12) update(deltaTime)
-📁 A função principal do jogo
-🔧 Serve para: atualizar tudo: movimentação, colisão, pontuação, boss, etc.
-Mexer aqui com cuidado. Usar para:
-- Adicionar fases diferentes conforme pontuação
-- Aumentar dificuldade progressivamente
-- Trocar música/fundo/conteúdo com o tempo
-------------------------------------------------------------------------------------------
-✅ 13) draw()
-📁 função que desenha o jogo
-🔧 Serve para: renderizar sprites, fundo, jogador, moedas, obstáculos
-Mexer aqui para:
-- Adicionar novos elementos visuais (personagem, HUD)
-- Trocar sprites dependendo da fase/personagem
-------------------------------------------------------------------------------------------
-✅ 14) jump(), roll(), activatePowerup()
-📁 funções de ação do jogador
-🔧 Serve para: movimentar o personagem
-Mexer para:
-- Modificar como pulo ou rolagem funcionam
-- Adicionar novas habilidades
-------------------------------------------------------------------------------------------
-✅ 15) endGame()
-📁 quando o jogador perde
-🔧 Serve para: mostrar score final e salvar ranking
-Mexer aqui para:
-- Criar tela personalizada de game over
-- Adicionar reinício com diferentes condições
-------------------------------------------------------------------------------------------
-✅ 16) startGame()
-📁 início de partida
-🔧 Serve para: resetar tudo e iniciar o jogo
-Mexer para:
-- Definir fase inicial
-- Sortear personagem aleatório
-- Tocar música diferente dependendo do modo
-------------------------------------------------------------------------------------------
-✅ 17) gameLoop()
-📁 loop principal
-🔧 Serve para: rodar update() + draw() em cada frame
-Normalmente não precisa mexer.
-------------------------------------------------------------------------------------------
-✅ 18) Eventos (keydown, touch, etc)
-📁 controlam ações do jogador
-🔧 Serve para: movimentação com teclado ou touch
-Mexer para:
-- Adicionar atalhos
-- Suporte a gamepad
-- Criar novo botão de fase ou personagem */
-
-function spawnObstacle() {
+// === 10) CRIAÇÃO DE OBSTÁCULOS E MOEDAS =============================================
+function criarObstaculo() {
   const tipo = Math.random();
+  let obstaculo;
 
   if (tipo < 0.4) {
-    obstacles.push({
+    obstaculo = {
       x: canvas.width,
-      y: GROUND_Y - 31,
-      width: 54,
-      height: 31,
-      image: obstaculoChaoImg,
-    });
+      y: CHAO_Y - 31,
+      largura: 54,
+      altura: 31,
+      imagem: imgObstaculoChao,
+    };
   } else if (tipo < 0.7) {
-    const height = 31;
-    const minY = GROUND_Y - 180; // topo
-    const maxY = GROUND_Y - 75; // mais baixo, exige rolar
-    const y = Math.floor(Math.random() * (maxY - minY + 1)) + minY;
+    const altura = 31;
+    const y =
+      Math.floor(Math.random() * (CHAO_Y - 75 - (CHAO_Y - 180) + 1)) +
+      (CHAO_Y - 180);
 
-    obstacles.push({
+    obstaculo = {
       x: canvas.width,
       y,
-      width: 54,
-      height,
-      image: obstaculoVoadorImg,
-    });
+      largura: 54,
+      altura,
+      imagem: imgObstaculoVoador,
+    };
   } else {
-    obstacles.push({
+    obstaculo = {
       x: canvas.width,
-      y: GROUND_Y - 80,
-      width: 54,
-      height: 80,
-      image: obstaculoPosteImg,
-    });
+      y: CHAO_Y - 80,
+      largura: 54,
+      altura: 80,
+      imagem: imgObstaculoPoste,
+    };
   }
+
+  obstaculos.push(obstaculo);
 }
 
-function spawnBoss() {
-  boss.active = true;
-  boss.state = "idle";
-  boss.x = canvas.width;
-  boss.y = GROUND_Y - boss.height;
-  boss.vx = 0;
-  boss.attackTimer = 0;
-  boss.attackCount = 0;
-  boss.cooldownTimer = 0;
-  boss.frame = 0;
-  boss.frameTimer = 0;
-  boss.hitPlayer = false; // ✅ ADICIONA ISSO
-  soundTheme.playbackRate = 1.5;
-}
+function criarMoeda() {
+  const minY = CHAO_Y - 180;
+  const maxY = CHAO_Y - 100;
+  const larguraMoeda = 70;
+  const alturaMoeda = 50;
 
-// REMOVIDA a função spawnBossWeapon() e todo o sistema bossWeapons (poder de jogar item)
-
-// função de checar se moeda muito próxima de obstáculo
-function isCoinTooCloseToObstacle(x, y, width, height) {
-  const minDistX = 80;
-  for (const o of obstacles) {
-    const distX = Math.abs(x - o.x);
-    const verticalOverlap = !(y + height < o.y || y > o.y + o.height);
-    if (distX < minDistX && verticalOverlap) return true;
-  }
-  return false;
-}
-
-function spawnCoin() {
-  const minY = GROUND_Y - 180;
-  const maxY = GROUND_Y - 100;
-  const coinWidth = 70;
-  const coinHeight = 50;
   let y = Math.random() * (maxY - minY) + minY;
   let x = canvas.width;
 
-  let tries = 0;
-  while (isCoinTooCloseToObstacle(x, y, coinWidth, coinHeight) && tries < 20) {
-    y = Math.random() * (maxY - minY) + minY;
-    tries++;
-  }
-
-  coins.push({ x, y, width: coinWidth, height: coinHeight });
+  moedas.push({ x, y, largura: larguraMoeda, altura: alturaMoeda });
 }
 
-function update(deltaTime) {
-  if (gameOver) return;
+// === 11) FUNÇÃO DE COLISÃO (VERSÃO CORRIGIDA) =======================================
+function verificarColisao(a, b) {
+  // Caixa de colisão do jogador
+  const aX = a.x + a.caixaColisao.deslocX;
+  const aY = a.y + a.caixaColisao.deslocY;
+  const aL = a.caixaColisao.largura;
+  const aA = a.caixaColisao.altura;
 
-  if (explosion.active) {
-    explosion.frameTimer++;
-    if (explosion.frameTimer >= explosion.frameDelay) {
-      explosion.frame++;
-      explosion.frameTimer = 0;
-
-      if (explosion.frame >= explosionFrames.length) {
-        explosion.active = false;
-      }
-    }
-  }
-
-  // Aplicar gravidade
-  const currentGravity =
-    player.jumping && player.fastFall ? FAST_FALL_GRAVITY : GRAVITY;
-  player.vy += currentGravity;
-  player.y += player.vy;
-
-  if (player.y >= GROUND_Y - player.height) {
-    player.y = GROUND_Y - player.height;
-    player.vy = 0;
-    player.jumping = false;
-    player.fastFall = false;
-
-    if (player.rolling) {
-      player.rollFrameTimer++;
-      if (player.rollFrameTimer >= player.rollFrameDelay) {
-        player.rollFrame++;
-        if (player.rollFrame >= rollFrames.length) {
-          player.rolling = false;
-          player.rollFrame = 0;
-
-          // 🔁 Restaurar hitbox original
-          player.hitbox = { ...player.originalHitbox };
-        }
-        player.rollFrameTimer = 0;
-      }
-    }
-  }
-
-  if (!player.jumping && !player.rolling) {
-    player.frameDelay--;
-    if (player.frameDelay <= 0) {
-      player.frame = (player.frame + 1) % runFrames.length;
-      player.frameDelay = 5;
-    }
-  }
-
-  obstacles.forEach((o) => (o.x -= gameSpeed));
-  coins.forEach((c) => (c.x -= gameSpeed));
-
-  obstacles = obstacles.filter((o) => o.x + o.width > 0);
-  coins = coins.filter((c) => c.x + c.width > 0);
-
-  for (let o of obstacles) {
-    if (!player.invincible && checkCollision(player, o)) {
-      explosion.active = true;
-      explosion.frame = 0;
-      explosion.frameTimer = 0;
-      explosion.x = player.x;
-      explosion.y = player.y;
-
-      lives--;
-      updateLivesDisplay();
-
-      if (lives <= 0) {
-        endGame();
-      } else {
-        player.invincible = true;
-        powerupTimer = 0;
-        blinkTimer = 0;
-        if (soundEnabled) soundDie.play();
-      }
-
-      break; // impede múltiplas colisões ao mesmo tempo
-    }
-  }
-
-  coins.forEach((coin, i) => {
-    if (checkCollision(player, coin)) {
-      score++;
-      scoreDisplay.innerText = `🪙 ${score}`;
-      coins.splice(i, 1);
-
-      if (soundEnabled) soundCoin.cloneNode().play();
-
-      // Apenas moedas fora da chuva contam para o powerup
-      if (!coinRainActive) {
-        powerupEligibleCoins++;
-
-        if (powerupEligibleCoins % 10 === 0) gameSpeed += 0.5;
-
-        if (powerupEligibleCoins % 30 === 0) {
-          activatePowerup();
-        }
-      }
-    }
-  });
-
-  if (player.invincible) {
-    powerupTimer += deltaTime;
-    blinkTimer += deltaTime;
-
-    if (blinkTimer > blinkInterval) {
-      player.visible = !player.visible;
-      blinkTimer = 0;
-    }
-
-    if (powerupTimer > powerupDuration) {
-      player.invincible = false;
-      player.visible = true;
-      powerupTimer = 0;
-      coinRainActive = false; // 🌧️ desativa a chuva de moedas
-      soundTheme.playbackRate = 1;
-    }
-  }
-
-  // === CHEFÃO ===
-  if (score % 100 === 0 && score !== 0 && !boss.active) {
-    spawnBoss();
-  }
-
-  if (boss.active) {
-    switch (boss.state) {
-      case "idle":
-        boss.attackTimer += deltaTime;
-        if (boss.attackTimer > 2000) {
-          boss.attackTimer = 0;
-          boss.state = "attacking";
-        }
-        break;
-
-      case "attacking":
-        boss.attackTimer += deltaTime;
-        if (boss.attackTimer > boss.attackInterval) {
-          boss.attackTimer = 0;
-          boss.attackCount++;
-          // **REMOVED**: spawnBossWeapon() call removed (chefe não joga mais itens)
-          if (boss.attackCount >= boss.maxAttacks) {
-            boss.state = "running";
-            boss.vx = -6;
-          }
-        }
-        break;
-      case "running":
-        boss.x += boss.vx;
-
-        if (
-          !boss.hitPlayer &&
-          !player.invincible &&
-          checkCollision(player, boss)
-        ) {
-          const playerBottom = player.y + player.height;
-          const bossTop = boss.y;
-
-          // Verifica se a colisão veio de cima
-          if (playerBottom <= bossTop + 20 && player.vy > 0) {
-            // ✅ Jogador pulou em cima do boss
-            boss.active = false;
-            boss.hitPlayer = true;
-            soundTheme.playbackRate = 1;
-            score += 5; // ou o que quiser
-            player.vy = JUMP_FORCE / 2; // rebote pra cima
-          } else {
-            // ❌ Colisão normal — perde vida
-            lives--;
-            updateLivesDisplay();
-
-            if (lives <= 0) {
-              endGame();
-            } else {
-              player.invincible = true;
-              powerupTimer = 0;
-              blinkTimer = 0;
-              if (soundEnabled) soundDie.play();
-            }
-
-            boss.hitPlayer = true;
-          }
-        }
-    }
-
-    // **OBS:** Não há mais armas do boss para mover/checar colisão — isso foi removido conforme pedido
-  }
-
-  obstacleTimer += deltaTime;
-  coinTimer += deltaTime;
-
-  if (obstacleTimer > 1500) {
-    spawnObstacle();
-    obstacleTimer = 0;
-  }
-
-  coinTimer += deltaTime;
-
-  const coinSpawnInterval = coinRainActive ? 150 : 1200; // 🌧️ mais moedas durante chuva
-
-  if (coinTimer > coinSpawnInterval) {
-    spawnCoin();
-    coinTimer = 0;
-  }
-}
-
-function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.drawImage(fundo, 0, 0, canvas.width, canvas.height);
-
-  chaoOffset -= gameSpeed;
-  if (chaoOffset <= -canvas.width) chaoOffset = 0;
-  ctx.drawImage(chao, chaoOffset, GROUND_Y, canvas.width, 70);
-  ctx.drawImage(chao, chaoOffset + canvas.width, GROUND_Y, canvas.width, 70);
-
-  coins.forEach((c) => ctx.drawImage(moedaImg, c.x, c.y, c.width, c.height));
-  obstacles.forEach((o) => ctx.drawImage(o.image, o.x, o.y, o.width, o.height));
-
-  if (player.visible) {
-    if (player.jumping) {
-      if (isMobile) {
-        const aspectRatio = jumpSprite.width / jumpSprite.height;
-        const desiredHeight = player.height;
-        const desiredWidth = desiredHeight * aspectRatio;
-        ctx.drawImage(
-          jumpSprite,
-          player.x,
-          player.y,
-          desiredWidth,
-          desiredHeight
-        );
-      } else {
-        ctx.drawImage(
-          jumpSprite,
-          player.x,
-          player.y,
-          player.width,
-          player.height
-        );
-      }
-    } else if (player.rolling) {
-      const rollImage = rollFrames[player.rollFrame];
-      if (isMobile) {
-        const aspectRatio = rollImage.width / rollImage.height;
-        const desiredHeight = player.height * 0.7;
-        const desiredWidth = desiredHeight * aspectRatio;
-        ctx.drawImage(
-          rollImage,
-          player.x,
-          player.y + 20,
-          desiredWidth,
-          desiredHeight
-        );
-      } else {
-        ctx.drawImage(
-          rollImage,
-          player.x,
-          player.y + 20,
-          player.width,
-          player.height * 0.7
-        );
-      }
-    } else {
-      const runImage = runFrames[player.frame];
-      if (isMobile) {
-        const aspectRatio = runImage.width / runImage.height;
-        const desiredHeight = player.height;
-        const desiredWidth = desiredHeight * aspectRatio;
-        ctx.drawImage(
-          runImage,
-          player.x,
-          player.y,
-          desiredWidth,
-          desiredHeight
-        );
-      } else {
-        ctx.drawImage(
-          runImage,
-          player.x,
-          player.y,
-          player.width,
-          player.height
-        );
-      }
-    }
-  }
-
-  // **REMOVED**: desenho de armas do chefão (não existem mais)
-
-  // Chefão (com animação de sprites)
-  if (boss.active) {
-    // atualizar frame de animação do boss
-    boss.frameTimer++;
-    if (boss.frameTimer >= boss.frameDelay) {
-      boss.frame = (boss.frame + 1) % bossFrames.length;
-      boss.frameTimer = 0;
-    }
-    const bossImg = bossFrames[boss.frame] || boss.image;
-    ctx.drawImage(bossImg, boss.x, boss.y, boss.width, boss.height);
-  }
-
-  if (explosion.active) {
-    const frameImg = explosionFrames[explosion.frame];
-    if (frameImg) {
-      ctx.drawImage(frameImg, explosion.x - 20, explosion.y - 20, 100, 100);
-    }
-  }
-
-  ctx.drawImage(rosto, 10, 10, 40, 40);
-}
-
-function checkCollision(a, b) {
-  const aX = a.x + a.hitbox.offsetX;
-  const aY = a.y + a.hitbox.offsetY;
-  const aW = a.hitbox.width;
-  const aH = a.hitbox.height;
-
+  // Caixa de colisão do objeto
   const bX = b.x;
   const bY = b.y;
-  const bW = b.width;
-  const bH = b.height;
+  const bL = b.largura || b.width; // Compatibilidade
+  const bA = b.altura || b.height; // Compatibilidade
 
-  return aX < bX + bW && aX + aW > bX && aY < bY + bH && aY + aH > bY;
+  return aX < bX + bL && aX + aL > bX && aY < bY + bA && aY + aA > bY;
 }
 
-function jump() {
-  if (!player.jumping && !player.rolling) {
-    player.vy = JUMP_FORCE;
-    player.jumping = true;
-    if (soundEnabled) soundJump.play();
+// === 12) ATUALIZAÇÃO DO JOGO ========================================================
+function atualizar(deltaTempo) {
+  if (jogoTerminado) return;
+
+  // Atualiza explosão
+  if (explosao.ativo) {
+    if (++explosao.temporizadorQuadro >= explosao.atrasoQuadro) {
+      explosao.quadro++;
+      explosao.temporizadorQuadro = 0;
+      if (explosao.quadro >= framesExplosao.length) explosao.ativo = false;
+    }
+  }
+
+  // Física do jogador
+  const gravidade =
+    jogador.pulando && jogador.quedaRapida ? GRAVIDADE_QUEDA_RAPIDA : GRAVIDADE;
+
+  jogador.velocidadeY += gravidade;
+  jogador.y += jogador.velocidadeY;
+
+  // Limite no chão
+  if (jogador.y >= CHAO_Y - jogador.altura) {
+    jogador.y = CHAO_Y - jogador.altura;
+    jogador.velocidadeY = 0;
+    jogador.pulando = false;
+    jogador.quedaRapida = false;
+
+    // Animação de rolagem
+    if (
+      jogador.rolando &&
+      ++jogador.temporizadorRolagem >= jogador.atrasoQuadroRolagem
+    ) {
+      jogador.quadroRolagem++;
+      jogador.temporizadorRolagem = 0;
+
+      if (jogador.quadroRolagem >= framesRolagem.length) {
+        jogador.rolando = false;
+        jogador.quadroRolagem = 0;
+        jogador.caixaColisao = { ...jogador.caixaColisaoOriginal };
+      }
+    }
+  }
+
+  // Animação de corrida
+  if (!jogador.pulando && !jogador.rolando && --jogador.atrasoQuadro <= 0) {
+    jogador.quadro = (jogador.quadro + 1) % framesCorrida.length;
+    jogador.atrasoQuadro = 5;
+  }
+
+  // Movimento dos objetos
+  obstaculos.forEach((o) => (o.x -= velocidadeJogo));
+  moedas.forEach((m) => (m.x -= velocidadeJogo));
+
+  // Remoção de objetos fora da tela
+  obstaculos = obstaculos.filter((o) => o.x + o.largura > 0);
+  moedas = moedas.filter((m) => m.x + m.largura > 0);
+
+  // Verificação de colisões
+  verificarColisoes();
+
+  // Powerups e efeitos
+  atualizarPowerups(deltaTempo);
+
+  // Lógica do chefe
+  atualizarChefe(deltaTempo);
+
+  // Spawn de objetos
+  tempoObstaculo += deltaTempo;
+  tempoMoeda += deltaTempo;
+
+  if (tempoObstaculo > 1500) {
+    criarObstaculo();
+    tempoObstaculo = 0;
+  }
+
+  if (tempoMoeda > (chuvaDeMoedasAtiva ? 100 : 400)) {
+    criarMoeda();
+    tempoMoeda = 0;
   }
 }
 
-function roll() {
-  if (!player.jumping && !player.rolling) {
-    player.rolling = true;
-    player.rollFrame = 0;
-    player.rollFrameTimer = 0;
+function verificarColisoes() {
+  // Colisão com obstáculos
+  for (const o of obstaculos) {
+    if (!jogador.invencivel && verificarColisao(jogador, o)) {
+      explosao.ativo = true;
+      explosao.quadro = 0;
+      explosao.temporizadorQuadro = 0;
+      explosao.x = jogador.x;
+      explosao.y = jogador.y;
 
-    // Reduzir hitbox ao rolar
-    player.hitbox = {
-      offsetX: 10,
-      offsetY: 40, // mais próximo do chão
-      width: 45,
-      height: 35, // menor altura
-    };
+      if (--vidas <= 0) fimDeJogo();
+      else {
+        jogador.invencivel = true;
+        tempoPowerup = 0;
+        tempoPiscar = 0;
+        if (somLigado) somMorte.play();
+      }
+      break;
+    }
+  }
+
+  // Colisão com moedas
+  for (let i = moedas.length - 1; i >= 0; i--) {
+    if (verificarColisao(jogador, moedas[i])) {
+      pontuacao++;
+      textoPontuacao.innerText = `🪙 ${pontuacao}`;
+      moedas.splice(i, 1);
+      if (somLigado) somMoeda.cloneNode().play();
+
+      if (!chuvaDeMoedasAtiva) {
+        moedasParaPowerup++;
+        if (moedasParaPowerup % 10 === 0) velocidadeJogo += 0.5;
+        if (moedasParaPowerup % 30 === 0) ativarPowerup();
+      }
+    }
   }
 }
 
-function activatePowerup() {
-  player.invincible = true;
-  powerupTimer = 0;
-  blinkTimer = 0;
-  coinRainActive = true; // 🌧️ ativa a chuva de moedas
-  if (soundEnabled) soundPowerup.play();
-  soundTheme.playbackRate = 1.5;
+function atualizarPowerups(deltaTempo) {
+  if (jogador.invencivel) {
+    tempoPowerup += deltaTempo;
+    tempoPiscar += deltaTempo;
+
+    if (tempoPiscar > intervaloPiscar) {
+      jogador.visivel = !jogador.visivel;
+      tempoPiscar = 0;
+    }
+
+    if (tempoPowerup > duracaoPowerup) {
+      jogador.invencivel = false;
+      jogador.visivel = true;
+      tempoPowerup = 0;
+      chuvaDeMoedasAtiva = false;
+      somTema.playbackRate = 1;
+    }
+  }
 }
 
-async function endGame() {
-  gameOver = true;
-  if (soundEnabled) soundDie.play();
-  soundTheme.pause();
-  finalScoreSpan.innerText = score;
-  gameOverScreen.classList.remove("hidden");
+function atualizarChefe(deltaTempo) {
+  if (!chefe.ativo && pontuacao > 0 && pontuacao % 100 === 0) {
+    criarChefe();
+  }
 
-  await fetchHighScores();
+  if (chefe.ativo) {
+    chefe.temporizadorQuadro++;
+    if (chefe.temporizadorQuadro >= chefe.atrasoQuadro) {
+      chefe.quadro = (chefe.quadro + 1) % framesChefe.length;
+      chefe.temporizadorQuadro = 0;
+    }
 
-  const lowestScore =
-    highScores.length < 5 ? 0 : highScores[highScores.length - 1].score;
-  if (score > lowestScore || highScores.length < 5) {
-    let playerName = prompt(
-      "Parabéns! Você entrou no Top 5! Digite seu nome:",
-      "Lino"
-    );
+    switch (chefe.estado) {
+      case "parado":
+        if ((chefe.tempoAtaque += deltaTempo) > 2000) {
+          chefe.tempoAtaque = 0;
+          chefe.estado = "atacando";
+        }
+        break;
 
-    if (!playerName) {
-      playerName = "Anônimo";
+      case "atacando":
+        if ((chefe.tempoAtaque += deltaTempo) > chefe.intervaloAtaque) {
+          chefe.tempoAtaque = 0;
+          if (++chefe.contagemAtaques >= chefe.maxAtaques) {
+            chefe.estado = "correndo";
+            chefe.velocidadeX = -6;
+          }
+        }
+        break;
+
+      case "correndo":
+        chefe.x += chefe.velocidadeX;
+
+        if (
+          !chefe.atingiuJogador &&
+          !jogador.invencivel &&
+          verificarColisao(jogador, chefe)
+        ) {
+          const baseJogador = jogador.y + jogador.altura;
+          const topoChefe = chefe.y;
+
+          if (baseJogador <= topoChefe + 20 && jogador.velocidadeY > 0) {
+            // Derrota o chefe
+            chefe.ativo = false;
+            chefe.atingiuJogador = true;
+            somTema.playbackRate = 1;
+            pontuacao += 5;
+            jogador.velocidadeY = FORCA_PULO / 2;
+          } else {
+            // Jogador toma dano
+            if (--vidas <= 0) fimDeJogo();
+            else {
+              jogador.invencivel = true;
+              tempoPowerup = 0;
+              tempoPiscar = 0;
+              if (somLigado) somMorte.play();
+            }
+            chefe.atingiuJogador = true;
+          }
+        }
+        break;
+    }
+  }
+}
+
+// === 13) RENDERIZAÇÃO DO JOGO =======================================================
+function desenhar() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Fundo
+  ctx.drawImage(imgFundo, 0, 0, canvas.width, canvas.height);
+
+  // Chão com scroll
+  deslocChao -= velocidadeJogo;
+  if (deslocChao <= -canvas.width) deslocChao = 0;
+  ctx.drawImage(imgChao, deslocChao, CHAO_Y, canvas.width, 70);
+  ctx.drawImage(imgChao, deslocChao + canvas.width, CHAO_Y, canvas.width, 70);
+
+  // Moedas e obstáculos
+  moedas.forEach((m) => ctx.drawImage(imgMoeda, m.x, m.y, m.largura, m.altura));
+  obstaculos.forEach((o) =>
+    ctx.drawImage(o.imagem, o.x, o.y, o.largura, o.altura)
+  );
+
+  // Jogador
+  if (jogador.visivel) {
+    if (jogador.pulando) {
+      desenharSprite(
+        spritePulo,
+        jogador.x,
+        jogador.y,
+        jogador.largura,
+        jogador.altura
+      );
+    } else if (jogador.rolando) {
+      const img = framesRolagem[jogador.quadroRolagem];
+      desenharSprite(
+        img,
+        jogador.x,
+        jogador.y + 20,
+        jogador.largura,
+        jogador.altura * 0.7
+      );
     } else {
-      playerName = playerName
-        .replace(/[^a-zA-Z0-9À-ÿçÇ ]/g, "") // permite letras com acento, números e espaço
-        .trim()
-        .substring(0, 12); // máximo de 12 caracteres
+      const img = framesCorrida[jogador.quadro];
+      desenharSprite(
+        img,
+        jogador.x,
+        jogador.y,
+        jogador.largura,
+        jogador.altura
+      );
     }
-
-    await addHighScore(playerName, score);
   }
 
-  await fetchHighScores();
+  // Chefe
+  if (chefe.ativo) {
+    const img = framesChefe[chefe.quadro] || chefe.imagem;
+    ctx.drawImage(img, chefe.x, chefe.y, chefe.largura, chefe.altura);
+  }
+
+  // Explosão
+  if (explosao.ativo && framesExplosao[explosao.quadro]) {
+    ctx.drawImage(
+      framesExplosao[explosao.quadro],
+      explosao.x - 20,
+      explosao.y - 20,
+      100,
+      100
+    );
+  }
+
+  // HUD
+  ctx.drawImage(imgRosto, 10, 10, 40, 40);
+  textoVidas.innerText = `❤️ x${vidas}`;
 }
 
-let lastTime = 0;
-function gameLoop(timestamp) {
-  if (!lastTime) lastTime = timestamp;
-  const deltaTime = timestamp - lastTime;
-  lastTime = timestamp;
-  update(deltaTime);
-  draw();
-  if (!gameOver) requestAnimationFrame(gameLoop);
+function desenharSprite(img, x, y, largura, altura) {
+  if (eMobile) {
+    const proporcao = img.width / img.height;
+    const novaAltura = altura;
+    const novaLargura = novaAltura * proporcao;
+    ctx.drawImage(img, x, y, novaLargura, novaAltura);
+  } else {
+    ctx.drawImage(img, x, y, largura, altura);
+  }
 }
 
-function startGame() {
-  // Resetar explosão
-  explosion.active = false;
-  explosion.frame = 0;
-  explosion.frameTimer = 0;
-
-  // Esconder telas de início e fim, mostrar canvas
-  startScreen.classList.add("hidden");
-  gameOverScreen.classList.add("hidden");
-  gameCanvas.classList.remove("hidden");
-
-  // Resetar pontuação e atualizar display
-  score = 0;
-  lives = 3;
-  updateLivesDisplay();
-  scoreDisplay.innerText = "🪙 0";
-  powerupEligibleCoins = 0;
-
-  // Resetar velocidade do jogo
-  gameSpeed = 4;
-
-  // Limpar arrays de obstáculos e moedas
-  obstacles = [];
-  coins = [];
-
-  // Resetar estado do jogador
-  player.y = GROUND_Y - player.height;
-  player.vy = 0;
-  player.jumping = false;
-  player.rolling = false;
-  player.invincible = false;
-  player.visible = true;
-  player.fastFall = false;
-
-  // Restaurar hitbox para estado original (em pé)
-  player.hitbox = { ...player.originalHitbox };
-
-  // Permitir rolar novamente
-  canRoll = true;
-
-  // Resetar estado de fim de jogo
-  gameOver = false;
-
-  // Resetar estado do chefe
-  boss.active = false;
-  boss.state = "idle";
-  boss.x = canvas.width;
-  boss.y = GROUND_Y - boss.height;
-  boss.vx = 0;
-  boss.attackTimer = 0;
-  boss.attackCount = 0;
-  boss.cooldownTimer = 0;
-  // reset animation
-  boss.frame = 0;
-  boss.frameTimer = 0;
-
-  // Resetar offset do chão para evitar "pulo" visual
-  chaoOffset = 0;
-
-  // Reiniciar música tema do jogo
-  soundTheme.currentTime = 0;
-  soundTheme.playbackRate = 1;
-  soundTheme.play();
-
-  // Iniciar loop do jogo
-  lastTime = 0; // garantir que o deltaTime comece zerado
-  requestAnimationFrame(gameLoop);
+// === 14) CONTROLES DO JOGADOR =======================================================
+function pular() {
+  if (!jogador.pulando && !jogador.rolando) {
+    jogador.velocidadeY = FORCA_PULO;
+    jogador.pulando = true;
+    if (somLigado) somPulo.play();
+  }
 }
 
-// ==== EVENTOS
-startButton.addEventListener("click", startGame);
-restartButton.addEventListener("click", startGame);
+function rolar() {
+  if (!jogador.pulando && !jogador.rolando && podeRolar) {
+    jogador.rolando = true;
+    jogador.quadroRolagem = 0;
+    jogador.temporizadorRolagem = 0;
+    jogador.caixaColisao = {
+      deslocX: 10,
+      deslocY: 40,
+      largura: 45,
+      altura: 35,
+    };
+    podeRolar = false;
+    setTimeout(() => (podeRolar = true), 300);
+  }
+}
 
+function ativarPowerup() {
+  jogador.invencivel = true;
+  tempoPowerup = 0;
+  tempoPiscar = 0;
+  chuvaDeMoedasAtiva = true;
+  if (somLigado) somPowerup.play();
+  somTema.playbackRate = 1.5;
+}
+
+// === 15) FIM DE JOGO ================================================================
+async function fimDeJogo() {
+  jogoTerminado = true;
+  if (somLigado) somMorte.play();
+  somTema.pause();
+  textoPontuacaoFinal.innerText = pontuacao;
+  telaFimDeJogo.classList.remove("hidden");
+
+  await buscarRanking();
+  const menorNoTop = ranking.length < 5 ? 0 : ranking[ranking.length - 1].score;
+
+  if (pontuacao > menorNoTop || ranking.length < 5) {
+    let nome =
+      prompt("Parabéns! Você entrou no Top 5! Digite seu nome:", "") ||
+      "Anônimo";
+    nome = nome
+      .replace(/[^a-zA-Z0-9À-ÿçÇ ]/g, "")
+      .trim()
+      .substring(0, 12);
+    await adicionarRanking(nome, pontuacao);
+    await buscarRanking();
+  }
+}
+
+// === 16) INICIALIZAÇÃO DO JOGO ======================================================
+function iniciarJogo() {
+  // Reset geral
+  explosao.ativo = false;
+  pontuacao = 0;
+  vidas = 3;
+  velocidadeJogo = 4;
+  obstaculos = [];
+  moedas = [];
+  moedasParaPowerup = 0;
+  jogoTerminado = false;
+  deslocChao = 0;
+
+  // Reset jogador
+  Object.assign(jogador, {
+    y: CHAO_Y - jogador.altura,
+    velocidadeY: 0,
+    pulando: false,
+    rolando: false,
+    invencivel: false,
+    visivel: true,
+    quedaRapida: false,
+    caixaColisao: { ...jogador.caixaColisaoOriginal },
+  });
+
+  // Reset chefe
+  Object.assign(chefe, {
+    x: canvas.width,
+    y: CHAO_Y - chefe.altura,
+    velocidadeX: 0,
+    estado: "parado",
+    ativo: false,
+    tempoAtaque: 0,
+    contagemAtaques: 0,
+    quadro: 0,
+    temporizadorQuadro: 0,
+    atingiuJogador: false,
+  });
+
+  // Telas
+  telaInicio.classList.add("hidden");
+  telaFimDeJogo.classList.add("hidden");
+  telaJogo.classList.remove("hidden");
+  textoPontuacao.innerText = "🪙 0";
+
+  // Áudio
+  somTema.currentTime = 0;
+  somTema.playbackRate = 1;
+  somTema.play();
+
+  // Inicia loop
+  ultimoTempo = 0;
+  requestAnimationFrame(loopDoJogo);
+}
+
+// === 17) LOOP PRINCIPAL =============================================================
+let ultimoTempo = 0;
+function loopDoJogo(carimboTempo) {
+  const deltaTempo = carimboTempo - (ultimoTempo || carimboTempo);
+  ultimoTempo = carimboTempo;
+
+  atualizar(deltaTempo);
+  desenhar();
+
+  if (!jogoTerminado) requestAnimationFrame(loopDoJogo);
+}
+
+// === 18) EVENTOS DE CONTROLE ========================================================
+// Botões
+botaoIniciar.addEventListener("click", iniciarJogo);
+botaoReiniciar.addEventListener("click", iniciarJogo);
+
+// Teclado
 window.addEventListener("keydown", (e) => {
-  if ((e.code === "Space" || e.code === "ArrowUp") && !gameOver) jump();
-  if (e.code === "ArrowDown" && !gameOver) {
-    if (player.jumping) {
-      player.fastFall = true;
-    } else if (canRoll) {
-      roll();
-      canRoll = false; // bloqueia até soltar a tecla
-    }
-  }
+  if (jogoTerminado) return;
 
+  if (e.code === "Space" || e.code === "ArrowUp") pular();
+  if (e.code === "ArrowDown") {
+    if (jogador.pulando) jogador.quedaRapida = true;
+    else rolar();
+  }
   if (
-    (e.code === "Enter" || e.code === "Space") &&
-    (gameOver || !startScreen.classList.contains("hidden"))
+    e.code === "Enter" &&
+    (jogoTerminado || !telaInicio.classList.contains("hidden"))
   ) {
-    startGame();
+    iniciarJogo();
   }
 });
 
 window.addEventListener("keyup", (e) => {
-  if (e.code === "ArrowDown") {
-    player.fastFall = false;
-    canRoll = true; // permite nova rolagem depois de soltar
-  }
+  if (e.code === "ArrowDown") jogador.quedaRapida = false;
 });
 
+// Touch
 window.addEventListener("touchstart", (e) => {
-  touchStartY = e.touches[0].clientY;
+  toqueInicioY = e.touches[0].clientY;
 });
 
 window.addEventListener("touchend", (e) => {
-  touchEndY = e.changedTouches[0].clientY;
-  const swipeDistance = touchStartY - touchEndY;
+  toqueFimY = e.changedTouches[0].clientY;
+  const dist = toqueInicioY - toqueFimY;
 
-  if (Math.abs(swipeDistance) < 30 || gameOver) return; // evita toques leves
+  if (Math.abs(dist) < 30 || jogoTerminado) return;
 
-  if (swipeDistance > 0) {
-    // Swipe para cima
-    jump();
-  } else {
-    // Swipe para baixo
-    if (player.jumping) {
-      player.fastFall = true;
-    } else if (canRoll) {
-      roll();
-      canRoll = false;
-    }
-  }
-
-  // Permite nova rolagem depois do toque
-  setTimeout(() => {
-    canRoll = true;
-  }, 300); // pequeno delay para evitar spam
+  if (dist > 0) pular();
+  else if (jogador.pulando) jogador.quedaRapida = true;
+  else rolar();
 });
 
-document.getElementById("btn-jump").addEventListener(
+// Botões de toque (opcional)
+document.getElementById("btn-jump")?.addEventListener(
   "touchstart",
   (e) => {
     e.preventDefault();
-    if (!gameOver) jump();
+    if (!jogoTerminado) pular();
   },
   { passive: false }
 );
 
-document.getElementById("btn-roll").addEventListener(
+document.getElementById("btn-roll")?.addEventListener(
   "touchstart",
   (e) => {
     e.preventDefault();
-    if (!gameOver) {
-      if (player.jumping) {
-        player.fastFall = true;
-      } else if (canRoll) {
-        roll();
-        canRoll = false;
-        setTimeout(() => {
-          canRoll = true;
-        }, 300);
-      }
+    if (!jogoTerminado) {
+      if (jogador.pulando) jogador.quedaRapida = true;
+      else rolar();
     }
   },
   { passive: false }
 );
+
+// === 19) FUNÇÕES AUXILIARES =========================================================
+function criarChefe() {
+  chefe.ativo = true;
+  chefe.estado = "parado";
+  chefe.x = canvas.width;
+  chefe.y = CHAO_Y - chefe.altura;
+  chefe.velocidadeX = 0;
+  chefe.tempoAtaque = 0;
+  chefe.contagemAtaques = 0;
+  chefe.quadro = 0;
+  chefe.temporizadorQuadro = 0;
+  chefe.atingiuJogador = false;
+  somTema.playbackRate = 1.5;
+}
