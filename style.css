@@ -25,7 +25,6 @@ body {
   height: 100vh;
   max-width: 450px;
   max-height: 450px;
-  aspect-ratio: landscape; /* Mantém formato quadrado */
   margin: auto;
   background: #000;
   border: 4px solid #fff;
@@ -34,6 +33,23 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
+  /* Removido aspect-ratio para flexibilidade no PC */
+}
+
+/* 🖥️ Modo paisagem no PC (telas maiores que 768px) */
+@media (min-width: 768px) {
+  #gameContainer {
+    width: 100vw;  /* Usa toda a largura da tela */
+    height: 100vh; /* Usa toda a altura da tela */
+    aspect-ratio: unset;  /* Removido o aspecto quadrado */
+  }
+}
+
+/* 📱 Modo quadrado no mobile (telas menores que 768px) */
+@media (max-width: 767px) {
+  #gameContainer {
+    aspect-ratio: 1 / 1; /* Quadrado no mobile */
+  }
 }
 
 /* 🎨 Área de desenho (canvas) */
