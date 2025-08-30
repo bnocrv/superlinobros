@@ -33,22 +33,16 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  /* Removido aspect-ratio para flexibilidade no PC */
+  /* Default (modo quadrado) no mobile */
+  aspect-ratio: 1 / 1;
 }
 
 /* 🖥️ Modo paisagem no PC (telas maiores que 768px) */
 @media (min-width: 768px) {
   #gameContainer {
-    width: 100vw;  /* Usa toda a largura da tela */
-    height: 100vh; /* Usa toda a altura da tela */
-    aspect-ratio: unset;  /* Removido o aspecto quadrado */
-  }
-}
-
-/* 📱 Modo quadrado no mobile (telas menores que 768px) */
-@media (max-width: 767px) {
-  #gameContainer {
-    aspect-ratio: 1 / 1; /* Quadrado no mobile */
+    width: 80vw;  /* Usa 80% da largura da tela */
+    height: 45vw; /* Ajusta altura proporcional à largura */
+    aspect-ratio: 16 / 9;  /* Define formato paisagem */
   }
 }
 
