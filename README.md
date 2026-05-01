@@ -41,7 +41,7 @@ O objetivo técnico foi construir uma aplicação front-end completa sem framewo
 - `H`: mostrar/esconder hitboxes para depuração.
 - Mobile: botões virtuais e gestos de toque.
 
-## Bosses
+## Chefes
 
 - `Joe`: aparece nos marcos `50`, `150`, `250` e assim por diante.
 - `Tonha`: aparece nos marcos `100`, `200`, `300` e assim por diante.
@@ -94,21 +94,21 @@ npm run check
 ## Melhorias recentes
 
 - Reestruturação do repositório e limpeza de arquivos não utilizados.
-- Remoção de `node_modules` do versionamento.
 - Correções no service worker e no PWA.
 - Ranking renderizado com DOM seguro em vez de `innerHTML` com dados externos.
 - Ajustes finos de responsividade desktop/mobile.
 - Tela inicial com estética moderna inspirada em NES/8-bit.
 - Game Over e Pause revisados.
-- Sistema de bosses Joe/Tonha.
+- Sistema de chefes Joe/Tonha.
 - Otimização de fundos e screenshot.
 
 ## Próximos passos
 
 - Modularizar mais partes do `script.js` (`player`, `boss`, `audio`, `input`).
-- Converter `theme.wav` para um formato mais leve quando houver ferramenta de áudio disponível.
+- Converter `theme.wav` para um formato mais leve e adicionar novas trilhas.
 - Adicionar testes automatizados para funções puras de colisão e agenda de bosses.
 - Evoluir a tela de ranking com estados de loading/erro mais visuais.
+- Adicionar novas fases e chefes e talvez a criação de um personagem auxiliar Lorenzo.
 
 ## Autor
 
