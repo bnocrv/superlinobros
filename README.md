@@ -23,7 +23,7 @@ O objetivo técnico foi construir uma aplicação front-end completa sem framewo
 - Controles por teclado, toque e botões mobile.
 - Física simples de pulo, queda rápida e rolagem.
 - Spawn progressivo de moedas e obstáculos.
-- Dois chefes com marcos alternados de aparição.
+- Chefes configuráveis em ciclo de aparição por pontuação.
 - Hitboxes calculadas a partir da área real ocupada pelos sprites.
 - Modo debug com tecla `H` para visualizar colisões.
 - Ranking Top 5 persistido no Firebase Firestore.
@@ -43,10 +43,17 @@ O objetivo técnico foi construir uma aplicação front-end completa sem framewo
 
 ## Chefes
 
-- `Joe`: aparece nos marcos `50`, `150`, `250` e assim por diante.
-- `Tonha`: aparece nos marcos `100`, `200`, `300` e assim por diante.
+- `David`: aparece no marco `50` do ciclo.
+- `Rayssa`: aparece no marco `100` do ciclo.
+- `Ana`: aparece no marco `150` do ciclo.
+- `Jaime`: aparece no marco `200` do ciclo.
+- `Camila`: aparece no marco `250` do ciclo.
+- `Joe`: aparece no marco `300` do ciclo.
+- `Marcelo`: aparece no marco `350` do ciclo.
+- `Tonha`: aparece no marco `400` do ciclo.
+- `Cleyton`: aparece no marco `450` do ciclo.
 
-Cada marco dispara apenas uma vez, evitando respawn repetido quando a pontuação permanece no mesmo valor.
+Depois de `450`, o ciclo recomeça: `500` volta para David, `550` Rayssa, `600` Ana e assim por diante. Cada marco dispara apenas uma vez, evitando respawn repetido quando a pontuação permanece no mesmo valor. Para adicionar um novo chefe, basta incluir os sprites numerados em `img/` e adicionar um item na lista `CHEFES` em `script.js`.
 
 ## Screenshot
 
@@ -99,7 +106,7 @@ npm run check
 - Ajustes finos de responsividade desktop/mobile.
 - Tela inicial com estética moderna inspirada em NES/8-bit.
 - Game Over e Pause revisados.
-- Sistema de chefes Joe/Tonha.
+- Sistema de chefes configurável com David, Rayssa, Ana, Jaime, Camila, Joe, Marcelo, Tonha e Cleyton.
 - Otimização de fundos e screenshot.
 
 ## Próximos passos

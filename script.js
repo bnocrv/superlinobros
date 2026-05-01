@@ -88,21 +88,77 @@ const framesExplosao = Array.from({ length: 5 }, (_, i) => {
   return img;
 });
 
-// Chefe
-const framesChefe = Array.from({ length: 3 }, (_, i) => {
-  const img = new Image();
-  img.src = `img/boss${i + 1}.png`;
-  return img;
-});
+function carregarFrames(prefixo, quantidade) {
+  return Array.from({ length: quantidade }, (_, i) => {
+    const img = new Image();
+    img.src = `img/${prefixo}${i + 1}.png`;
+    return img;
+  });
+}
 
-const framesJoe = Array.from({ length: 3 }, (_, i) => {
-  const img = new Image();
-  img.src = `img/joe${i + 1}.png`;
-  return img;
-});
+// Chefes: basta adicionar um item aqui para entrar no ciclo a cada 50 pontos.
+const CHEFES = [
+  {
+    tipo: "david",
+    nome: "David",
+    frames: carregarFrames("david", 4),
+    velocidadeAtaque: -7.3,
+  },
+  {
+    tipo: "rayssa",
+    nome: "Rayssa",
+    frames: carregarFrames("rayssa", 3),
+    velocidadeAtaque: -7.1,
+  },
+  {
+    tipo: "ana",
+    nome: "Ana",
+    frames: carregarFrames("ana", 3),
+    velocidadeAtaque: -7,
+  },
+  {
+    tipo: "jaime",
+    nome: "Jaime",
+    frames: carregarFrames("jaime", 3),
+    velocidadeAtaque: -7.2,
+  },
+  {
+    tipo: "camila",
+    nome: "Camila",
+    frames: carregarFrames("camila", 3),
+    velocidadeAtaque: -7.1,
+  },
+  {
+    tipo: "joe",
+    nome: "Joe",
+    frames: carregarFrames("joe", 3),
+    velocidadeAtaque: -7,
+  },
+  {
+    tipo: "marcelo",
+    nome: "Marcelo",
+    frames: carregarFrames("marcelo", 3),
+    velocidadeAtaque: -6.5,
+  },
+  {
+    tipo: "tonha",
+    nome: "Tonha",
+    frames: carregarFrames("tonha", 4),
+    velocidadeAtaque: -6,
+  },
+  {
+    tipo: "cleyton",
+    nome: "Cleyton",
+    frames: carregarFrames("cleyton", 3),
+    velocidadeAtaque: -7,
+  },
+].map((chefeConfig, indice) => ({
+  ...chefeConfig,
+  marco: (indice + 1) * 50,
+}));
 
-const imgChefeParado = new Image();
-imgChefeParado.src = "img/boss.png";
+const CICLO_CHEFES = CHEFES[CHEFES.length - 1].marco;
+const chefePadrao = CHEFES.find((chefeConfig) => chefeConfig.frames.length > 0);
 
 const limitesSprites = {
   "corpo_run1.png": { x: 0, y: 0, largura: 0.9394, altura: 1 },
@@ -120,13 +176,35 @@ const limitesSprites = {
   "obstaculo.png": { x: 0, y: 0.18, largura: 1, altura: 0.82 },
   "obstaculo_voador.png": { x: 0.02, y: 0, largura: 0.98, altura: 1 },
   "obstaculo_poste.png": { x: 0, y: 0, largura: 1, altura: 1 },
-  "boss.png": { x: 0, y: 0, largura: 1, altura: 1 },
-  "boss1.png": { x: 0, y: 0, largura: 1, altura: 1 },
-  "boss2.png": { x: 0.0111, y: 0, largura: 0.9889, altura: 1 },
-  "boss3.png": { x: 0.0167, y: 0, largura: 0.9722, altura: 1 },
   "joe1.png": { x: 0, y: 0, largura: 1, altura: 1 },
   "joe2.png": { x: 0, y: 0, largura: 1, altura: 1 },
   "joe3.png": { x: 0, y: 0, largura: 1, altura: 1 },
+  "tonha1.png": { x: 0, y: 0, largura: 1, altura: 1 },
+  "tonha2.png": { x: 0, y: 0, largura: 1, altura: 1 },
+  "tonha3.png": { x: 0.0111, y: 0, largura: 0.9889, altura: 1 },
+  "tonha4.png": { x: 0.0167, y: 0, largura: 0.9722, altura: 1 },
+  "marcelo1.png": { x: 0, y: 0, largura: 1, altura: 1 },
+  "marcelo2.png": { x: 0, y: 0, largura: 1, altura: 1 },
+  "marcelo3.png": { x: 0, y: 0, largura: 1, altura: 1 },
+  "cleyton1.png": { x: 0.0944, y: 0, largura: 0.8556, altura: 1 },
+  "cleyton2.png": { x: 0, y: 0, largura: 0.9889, altura: 1 },
+  "cleyton3.png": { x: 0.0667, y: 0, largura: 0.8111, altura: 1 },
+  "jaime1.png": { x: 0.0111, y: 0.0199, largura: 0.9333, altura: 0.9801 },
+  "jaime2.png": { x: 0.1278, y: 0.0498, largura: 0.7944, altura: 0.9502 },
+  "jaime3.png": { x: 0.0167, y: 0.0348, largura: 0.9667, altura: 0.9652 },
+  "ana1.png": { x: 0.1444, y: 0.0149, largura: 0.7, altura: 0.9851 },
+  "ana2.png": { x: 0.2222, y: 0, largura: 0.5778, altura: 1 },
+  "ana3.png": { x: 0.2556, y: 0, largura: 0.5111, altura: 1 },
+  "camila1.png": { x: 0.2111, y: 0, largura: 0.5667, altura: 1 },
+  "camila2.png": { x: 0.0722, y: 0.005, largura: 0.85, altura: 0.995 },
+  "camila3.png": { x: 0.1222, y: 0, largura: 0.6944, altura: 1 },
+  "david1.png": { x: 0.2389, y: 0.0249, largura: 0.5556, altura: 0.9751 },
+  "david2.png": { x: 0.2333, y: 0.0249, largura: 0.5556, altura: 0.9502 },
+  "david3.png": { x: 0.1333, y: 0.0199, largura: 0.7278, altura: 0.9403 },
+  "david4.png": { x: 0.2056, y: 0, largura: 0.5778, altura: 1 },
+  "rayssa1.png": { x: 0.2, y: 0, largura: 0.6056, altura: 1 },
+  "rayssa2.png": { x: 0.1611, y: 0, largura: 0.6611, altura: 0.995 },
+  "rayssa3.png": { x: 0.25, y: 0, largura: 0.5222, altura: 1 },
 };
 
 // === 5) SONS DO JOGO ================================================================
@@ -223,8 +301,9 @@ let explosao = {
 
 // === 8) CHEFE DO JOGO ===============================================================
 const chefe = {
-  tipo: "boss",
-  frames: framesChefe,
+  tipo: chefePadrao.tipo,
+  nome: chefePadrao.nome,
+  frames: chefePadrao.frames,
   x: canvas.width,
   y: CHAO_Y - 120,
   largura: 120,
@@ -237,11 +316,11 @@ const chefe = {
   contagemAtaques: 0,
   maxAtaques: 3,
   tempoRecarga: 0,
-  velocidadeAtaque: -6,
+  velocidadeAtaque: chefePadrao.velocidadeAtaque,
   quadro: 0,
   atrasoQuadro: 10,
   temporizadorQuadro: 0,
-  imagem: imgChefeParado,
+  imagem: chefePadrao.frames[0],
   atingiuJogador: false,
 };
 
@@ -297,7 +376,7 @@ function atualizarStatusChefe() {
     return;
   }
 
-  nomeChefe.textContent = chefe.tipo === "joe" ? "Joe" : "Tonha";
+  nomeChefe.textContent = chefe.nome;
   statusChefe.style.setProperty("--boss-progress", "100%");
   statusChefe.classList.remove("hidden");
 }
@@ -371,11 +450,12 @@ function obterIntervaloMoeda() {
   return Math.max(260, 420 - pontuacao * 2);
 }
 
-function obterTipoChefeDoMarco() {
+function obterChefeDoMarco() {
   if (pontuacao <= 0) return null;
-  if (pontuacao % 100 === 0) return "boss";
-  if ((pontuacao - 50) % 100 === 0) return "joe";
-  return null;
+  const marcoNoCiclo = ((pontuacao - 1) % CICLO_CHEFES) + 1;
+  const chefeConfig = CHEFES.find((config) => config.marco === marcoNoCiclo);
+
+  return chefeConfig?.frames.length ? chefeConfig : null;
 }
 
 // === 11) COLISÃO ====================================================================
@@ -623,10 +703,10 @@ function atualizarPowerups(deltaTempo) {
 }
 
 function atualizarChefe(deltaTempo) {
-  const tipoChefe = obterTipoChefeDoMarco();
+  const chefeDoMarco = obterChefeDoMarco();
 
-  if (!chefe.ativo && tipoChefe && ultimoMarcoChefe !== pontuacao) {
-    criarChefe(tipoChefe);
+  if (!chefe.ativo && chefeDoMarco && ultimoMarcoChefe !== pontuacao) {
+    criarChefe(chefeDoMarco);
     ultimoMarcoChefe = pontuacao;
   }
 
@@ -672,7 +752,6 @@ function atualizarChefe(deltaTempo) {
             // Derrota o chefe
             chefe.ativo = false;
             chefe.atingiuJogador = true;
-            somTema.playbackRate = 1;
             pontuacao += 5;
             textoPontuacao.innerText = `🪙 ${pontuacao}`;
             statusChefe?.classList.add("hidden");
@@ -691,7 +770,6 @@ function atualizarChefe(deltaTempo) {
       chefe.estado = "parado";
       chefe.atingiuJogador = false;
       statusChefe?.classList.add("hidden");
-      somTema.playbackRate = chuvaDeMoedasAtiva ? 1.5 : 1;
     }
   }
 }
@@ -867,7 +945,7 @@ async function fimDeJogo() {
 function iniciarJogo() {
   // Reset geral
   explosao.ativo = false;
-  pontuacao = 0;
+  pontuacao = 45;
   vidas = 3;
   velocidadeJogo = 4;
   obstaculos = [];
@@ -891,13 +969,14 @@ function iniciarJogo() {
 
   // Reset chefe
   Object.assign(chefe, {
-    tipo: "boss",
-    frames: framesChefe,
-    imagem: imgChefeParado,
+    tipo: chefePadrao.tipo,
+    nome: chefePadrao.nome,
+    frames: chefePadrao.frames,
+    imagem: chefePadrao.frames[0],
     x: canvas.width,
     y: CHAO_Y - chefe.altura,
     velocidadeX: 0,
-    velocidadeAtaque: -6,
+    velocidadeAtaque: chefePadrao.velocidadeAtaque,
     estado: "parado",
     ativo: false,
     tempoAtaque: 0,
@@ -1050,21 +1129,17 @@ window.addEventListener("resize", atualizarMidiaResponsiva);
 window.addEventListener("orientationchange", atualizarMidiaResponsiva);
 
 // === 19) FUNÇÕES AUXILIARES =========================================================
-function criarChefe(tipo = "boss") {
-  const configChefe =
-    tipo === "joe"
-      ? { frames: framesJoe, imagem: framesJoe[0], velocidadeX: -7 }
-      : { frames: framesChefe, imagem: imgChefeParado, velocidadeX: -6 };
-
-  chefe.tipo = tipo;
+function criarChefe(configChefe = chefePadrao) {
+  chefe.tipo = configChefe.tipo;
+  chefe.nome = configChefe.nome;
   chefe.frames = configChefe.frames;
-  chefe.imagem = configChefe.imagem;
+  chefe.imagem = configChefe.frames[0];
   chefe.ativo = true;
   chefe.estado = "parado";
   chefe.x = canvas.width;
   chefe.y = CHAO_Y - chefe.altura;
   chefe.velocidadeX = 0;
-  chefe.velocidadeAtaque = configChefe.velocidadeX;
+  chefe.velocidadeAtaque = configChefe.velocidadeAtaque;
   chefe.tempoAtaque = 0;
   chefe.contagemAtaques = 0;
   chefe.quadro = 0;
