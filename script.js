@@ -2,16 +2,12 @@
    GUIA RÁPIDO
 ===================================================================================== */
 
-// === 1) IMPORTAÇÕES (Firebase) ===========================================
 import {
-  collection,
-  query,
-  orderBy,
-  limit,
-  getDocs,
-  addDoc,
-} from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
-import { db } from "./firebase.js";
+  adicionarRanking,
+  buscarRanking,
+  jogadorEntrouNoTop5,
+  limparNomeRanking,
+} from "./js/ranking.js";
 
 // === 2) CONFIGURAÇÕES INICIAIS ======================================================
 // Elementos HTML
@@ -22,13 +18,24 @@ const telaJogo = document.getElementById("gameCanvas");
 const textoPontuacao = document.getElementById("score");
 const telaFimDeJogo = document.getElementById("gameOverScreen");
 const botaoReiniciar = document.getElementById("restartButton");
+const botaoPausa = document.getElementById("pauseButton");
+const telaPausa = document.getElementById("pauseScreen");
+const botaoContinuar = document.getElementById("resumeButton");
+const botaoReiniciarPausa = document.getElementById("pauseRestartButton");
+const botaoSomPausa = document.getElementById("pauseSoundButton");
 const textoPontuacaoFinal = document.getElementById("finalScore");
 const caixaRanking = document.getElementById("highScores");
 const textoVidas = document.getElementById("lives");
+const statusPowerup = document.getElementById("powerupStatus");
+const statusChefe = document.getElementById("bossStatus");
+const nomeChefe = document.getElementById("bossName");
+const overlayDano = document.getElementById("damageOverlay");
+const formularioRanking = document.getElementById("rankingForm");
+const campoNomeJogador = document.getElementById("playerName");
 
 const canvas = telaJogo;
 const ctx = canvas.getContext("2d");
-const eMobile = window.innerWidth < 768;
+let telaPequena = window.innerWidth < 768;
 
 // === 3) CONSTANTES DO JOGO ==========================================================
 const GRAVIDADE = 0.6;
@@ -59,7 +66,10 @@ imgRosto.src = "img/rosto.png";
 const imgChao = new Image();
 imgChao.src = "img/chao.png";
 const imgFundo = new Image();
-imgFundo.src = "img/fundo.png";
+imgFundo.src =
+  window.matchMedia("(max-width: 767px) and (orientation: portrait)").matches
+    ? "img/fundo_mobile.jpg"
+    : "img/fundo.jpg";
 
 // Itens
 const imgMoeda = new Image();
@@ -84,8 +94,40 @@ const framesChefe = Array.from({ length: 3 }, (_, i) => {
   img.src = `img/boss${i + 1}.png`;
   return img;
 });
+
+const framesJoe = Array.from({ length: 3 }, (_, i) => {
+  const img = new Image();
+  img.src = `img/joe${i + 1}.png`;
+  return img;
+});
+
 const imgChefeParado = new Image();
 imgChefeParado.src = "img/boss.png";
+
+const limitesSprites = {
+  "corpo_run1.png": { x: 0, y: 0, largura: 0.9394, altura: 1 },
+  "corpo_run2.png": { x: 0, y: 0, largura: 1, altura: 1 },
+  "corpo_run3.png": { x: 0.1061, y: 0, largura: 0.8333, altura: 1 },
+  "corpo_run4.png": { x: 0, y: 0, largura: 1, altura: 1 },
+  "corpo_run5.png": { x: 0, y: 0, largura: 1, altura: 1 },
+  "corpo_run6.png": { x: 0, y: 0, largura: 1, altura: 1 },
+  "corpo_jump.png": { x: 0.0455, y: 0, largura: 0.9091, altura: 1 },
+  "corpo_down1.png": { x: 0.0909, y: 0.0455, largura: 0.8485, altura: 0.9394 },
+  "corpo_down2.png": { x: 0, y: 0.1515, largura: 1, altura: 0.803 },
+  "corpo_down3.png": { x: 0, y: 0, largura: 0.9394, altura: 1 },
+  "corpo_down4.png": { x: 0.0152, y: 0, largura: 0.9848, altura: 1 },
+  "moeda.png": { x: 0.2429, y: 0.2571, largura: 0.5143, altura: 0.5143 },
+  "obstaculo.png": { x: 0, y: 0.18, largura: 1, altura: 0.82 },
+  "obstaculo_voador.png": { x: 0.02, y: 0, largura: 0.98, altura: 1 },
+  "obstaculo_poste.png": { x: 0, y: 0, largura: 1, altura: 1 },
+  "boss.png": { x: 0, y: 0, largura: 1, altura: 1 },
+  "boss1.png": { x: 0, y: 0, largura: 1, altura: 1 },
+  "boss2.png": { x: 0.0111, y: 0, largura: 0.9889, altura: 1 },
+  "boss3.png": { x: 0.0167, y: 0, largura: 0.9722, altura: 1 },
+  "joe1.png": { x: 0, y: 0, largura: 1, altura: 1 },
+  "joe2.png": { x: 0, y: 0, largura: 1, altura: 1 },
+  "joe3.png": { x: 0, y: 0, largura: 1, altura: 1 },
+};
 
 // === 5) SONS DO JOGO ================================================================
 const somTema = new Audio("audio/theme.wav");
@@ -99,13 +141,32 @@ const somPowerup = new Audio("audio/powerup.ogg");
 const somMoeda = new Audio("audio/coin.ogg");
 somMoeda.volume = 0.01;
 
+function tocarAudio(audio) {
+  if (!somLigado) return;
+  audio.currentTime = 0;
+  audio.play().catch(() => {});
+}
+
+function iniciarTema() {
+  somTema.play().catch(() => {});
+}
+
+function atualizarMidiaResponsiva() {
+  telaPequena = window.innerWidth < 768;
+  imgFundo.src =
+    window.matchMedia("(max-width: 767px) and (orientation: portrait)").matches
+      ? "img/fundo_mobile.jpg"
+      : "img/fundo.jpg";
+}
+
 botaoAlternarSom.addEventListener("click", () => {
   somLigado = !somLigado;
   botaoAlternarSom.innerText = somLigado ? "🔊 Som" : "🔇 Mudo";
+  if (botaoSomPausa) botaoSomPausa.innerText = somLigado ? "Som: ON" : "Som: OFF";
   somTema.volume = somLigado ? 0.1 : 0;
 });
 
-// === 6) ESTADO DO JOGADOR (CORRIGIDO) ===============================================
+// === 6) ESTADO DO JOGADOR ==========================================================
 const jogador = {
   x: 100,
   y: CHAO_Y - 80,
@@ -119,23 +180,6 @@ const jogador = {
   temporizadorRolagem: 2,
   quadro: 0,
   atrasoQuadro: 5,
-
-  // CAIXA DE COLISÃO CORRIGIDA (nomes consistentes)
-  caixaColisao: {
-    deslocX: 20,
-    deslocY: 10,
-    largura: 40,
-    altura: 55,
-  },
-
-  // CÓPIA ORIGINAL PARA RESTAURAR
-  caixaColisaoOriginal: {
-    deslocX: 20,
-    deslocY: 10,
-    largura: 40,
-    altura: 55,
-  },
-
   invencivel: false,
   visivel: true,
   quedaRapida: false,
@@ -145,6 +189,7 @@ const jogador = {
 let pontuacao = 0;
 let moedasParaPowerup = 0;
 let jogoTerminado = false;
+let jogoPausado = false;
 let vidas = 3;
 let velocidadeJogo = 4;
 let deslocChao = 0;
@@ -158,10 +203,13 @@ let tempoPiscar = 0;
 let podeRolar = true;
 let toqueInicioY = 0;
 let toqueFimY = 0;
+let mostrarHitboxes = false;
+let ultimoMarcoChefe = 0;
 
 const duracaoPowerup = 2000;
 const intervaloPiscar = 200;
-let ranking = [];
+
+if (botaoSomPausa) botaoSomPausa.innerText = somLigado ? "Som: ON" : "Som: OFF";
 
 // Efeito de explosão
 let explosao = {
@@ -175,6 +223,8 @@ let explosao = {
 
 // === 8) CHEFE DO JOGO ===============================================================
 const chefe = {
+  tipo: "boss",
+  frames: framesChefe,
   x: canvas.width,
   y: CHAO_Y - 120,
   largura: 120,
@@ -187,6 +237,7 @@ const chefe = {
   contagemAtaques: 0,
   maxAtaques: 3,
   tempoRecarga: 0,
+  velocidadeAtaque: -6,
   quadro: 0,
   atrasoQuadro: 10,
   temporizadorQuadro: 0,
@@ -194,42 +245,61 @@ const chefe = {
   atingiuJogador: false,
 };
 
-// === 9) FUNÇÕES DE RANKING (Firestore - opcional) ===================================
-async function buscarRanking() {
-  try {
-    const refScores = collection(db, "highscores");
-    const q = query(refScores, orderBy("score", "desc"), limit(5));
-    const snap = await getDocs(q);
-
-    ranking = [];
-    snap.forEach((doc) => ranking.push(doc.data()));
-    mostrarRanking();
-  } catch (erro) {
-    console.error("Erro ao buscar ranking:", erro);
-  }
+function exibirFormularioRanking() {
+  formularioRanking?.classList.remove("hidden");
+  campoNomeJogador?.focus();
 }
 
-async function adicionarRanking(nome, pontos) {
-  try {
-    const refScores = collection(db, "highscores");
-    await addDoc(refScores, { name: nome, score: pontos });
-  } catch (erro) {
-    console.error("Erro ao adicionar ranking:", erro);
-  }
+function esconderFormularioRanking() {
+  formularioRanking?.classList.add("hidden");
+  formularioRanking?.reset();
 }
 
-function mostrarRanking() {
-  if (!caixaRanking) return;
+function registrarMoedaColetada() {
+  pontuacao++;
+  textoPontuacao.innerText = `🪙 ${pontuacao}`;
+}
 
-  caixaRanking.innerHTML =
-    ranking.length === 0
-      ? "<p>Nenhuma pontuação ainda.</p>"
-      : `
-      <h3>🏆 Top 5 Pontuações:</h3>
-      <ol>
-        ${ranking.map((p) => `<li>${p.name}: ${p.score} 🪙</li>`).join("")}
-      </ol>
-    `;
+function piscarDano() {
+  overlayDano?.classList.remove("hidden");
+  overlayDano?.classList.remove("damage-active");
+  void overlayDano?.offsetWidth;
+  overlayDano?.classList.add("damage-active");
+
+  setTimeout(() => {
+    overlayDano?.classList.add("hidden");
+    overlayDano?.classList.remove("damage-active");
+  }, 280);
+}
+
+function receberDano() {
+  explosao.ativo = true;
+  explosao.quadro = 0;
+  explosao.temporizadorQuadro = 0;
+  explosao.x = jogador.x;
+  explosao.y = jogador.y;
+  piscarDano();
+
+  if (--vidas <= 0) {
+    fimDeJogo();
+    return;
+  }
+
+  jogador.invencivel = true;
+  tempoPowerup = 0;
+  tempoPiscar = 0;
+  tocarAudio(somMorte);
+}
+
+function atualizarStatusChefe() {
+  if (!statusChefe || !chefe.ativo) {
+    statusChefe?.classList.add("hidden");
+    return;
+  }
+
+  nomeChefe.textContent = chefe.tipo === "joe" ? "Joe" : "Tonha";
+  statusChefe.style.setProperty("--boss-progress", "100%");
+  statusChefe.classList.remove("hidden");
 }
 
 // === 10) CRIAÇÃO DE OBSTÁCULOS E MOEDAS =============================================
@@ -244,6 +314,7 @@ function criarObstaculo() {
       largura: 54,
       altura: 31,
       imagem: imgObstaculoChao,
+      caixaColisao: caixaRelativa("obstaculo.png"),
     };
   } else if (tipo < 0.7) {
     const altura = 31;
@@ -257,6 +328,7 @@ function criarObstaculo() {
       largura: 54,
       altura,
       imagem: imgObstaculoVoador,
+      caixaColisao: caixaRelativa("obstaculo_voador.png"),
     };
   } else {
     obstaculo = {
@@ -265,6 +337,7 @@ function criarObstaculo() {
       largura: 54,
       altura: 80,
       imagem: imgObstaculoPoste,
+      caixaColisao: caixaRelativa("obstaculo_poste.png"),
     };
   }
 
@@ -280,29 +353,145 @@ function criarMoeda() {
   let y = Math.random() * (maxY - minY) + minY;
   let x = canvas.width;
 
-  moedas.push({ x, y, largura: larguraMoeda, altura: alturaMoeda });
+  moedas.push({
+    x,
+    y,
+    largura: larguraMoeda,
+    altura: alturaMoeda,
+    caixaColisao: caixaRelativa("moeda.png"),
+  });
 }
 
-// === 11) FUNÇÃO DE COLISÃO (VERSÃO CORRIGIDA) =======================================
+function obterIntervaloObstaculo() {
+  return Math.max(850, 1500 - pontuacao * 8);
+}
+
+function obterIntervaloMoeda() {
+  if (chuvaDeMoedasAtiva) return 100;
+  return Math.max(260, 420 - pontuacao * 2);
+}
+
+function obterTipoChefeDoMarco() {
+  if (pontuacao <= 0) return null;
+  if (pontuacao % 100 === 0) return "boss";
+  if ((pontuacao - 50) % 100 === 0) return "joe";
+  return null;
+}
+
+// === 11) COLISÃO ====================================================================
+function caixaRelativa(nomeArquivo) {
+  return limitesSprites[nomeArquivo] || { x: 0, y: 0, largura: 1, altura: 1 };
+}
+
+function obterNomeImagem(img) {
+  return img?.src?.split("/").pop() || "";
+}
+
+function calcularRetanguloSprite(img, x, y, largura, altura) {
+  if (!img.complete || img.naturalWidth === 0) {
+    return { x, y, largura, altura };
+  }
+
+  const proporcao = img.naturalWidth / img.naturalHeight;
+  const novaAltura = altura;
+  const novaLargura = novaAltura * proporcao;
+  const deslocX = telaPequena ? 0 : (largura - novaLargura) / 2;
+
+  return {
+    x: x + deslocX,
+    y,
+    largura: novaLargura,
+    altura: novaAltura,
+  };
+}
+
+function obterSpriteJogador() {
+  if (jogador.pulando) {
+    return {
+      img: spritePulo,
+      x: jogador.x,
+      y: jogador.y,
+      largura: jogador.largura,
+      altura: jogador.altura,
+    };
+  }
+
+  if (jogador.rolando) {
+    return {
+      img: framesRolagem[jogador.quadroRolagem],
+      x: jogador.x,
+      y: jogador.y + 20,
+      largura: jogador.largura,
+      altura: jogador.altura * 0.7,
+    };
+  }
+
+  return {
+    img: framesCorrida[jogador.quadro],
+    x: jogador.x,
+    y: jogador.y,
+    largura: jogador.largura,
+    altura: jogador.altura,
+  };
+}
+
+function obterCaixaJogador() {
+  const sprite = obterSpriteJogador();
+  const retangulo = calcularRetanguloSprite(
+    sprite.img,
+    sprite.x,
+    sprite.y,
+    sprite.largura,
+    sprite.altura
+  );
+  const limite = caixaRelativa(obterNomeImagem(sprite.img));
+
+  return {
+    x: retangulo.x + retangulo.largura * limite.x,
+    y: retangulo.y + retangulo.altura * limite.y,
+    largura: retangulo.largura * limite.largura,
+    altura: retangulo.altura * limite.altura,
+  };
+}
+
+function obterCaixaObjeto(objeto) {
+  if (objeto === chefe) {
+    const img = chefe.frames[chefe.quadro] || chefe.imagem;
+    const limite = caixaRelativa(obterNomeImagem(img));
+
+    return {
+      x: chefe.x + chefe.largura * limite.x,
+      y: chefe.y + chefe.altura * limite.y,
+      largura: chefe.largura * limite.largura,
+      altura: chefe.altura * limite.altura,
+    };
+  }
+
+  const caixa = objeto.caixaColisao || { x: 0, y: 0, largura: 1, altura: 1 };
+
+  return {
+    x: objeto.x + objeto.largura * caixa.x,
+    y: objeto.y + objeto.altura * caixa.y,
+    largura: objeto.largura * caixa.largura,
+    altura: objeto.altura * caixa.altura,
+  };
+}
+
 function verificarColisao(a, b) {
-  // Caixa de colisão do jogador
-  const aX = a.x + a.caixaColisao.deslocX;
-  const aY = a.y + a.caixaColisao.deslocY;
-  const aL = a.caixaColisao.largura;
-  const aA = a.caixaColisao.altura;
+  const caixaA = a === jogador ? obterCaixaJogador() : obterCaixaObjeto(a);
+  const caixaB = b === jogador ? obterCaixaJogador() : obterCaixaObjeto(b);
 
-  // Caixa de colisão do objeto
-  const bX = b.x;
-  const bY = b.y;
-  const bL = b.largura || b.width; // Compatibilidade
-  const bA = b.altura || b.height; // Compatibilidade
-
-  return aX < bX + bL && aX + aL > bX && aY < bY + bA && aY + aA > bY;
+  return (
+    caixaA.x < caixaB.x + caixaB.largura &&
+    caixaA.x + caixaA.largura > caixaB.x &&
+    caixaA.y < caixaB.y + caixaB.altura &&
+    caixaA.y + caixaA.altura > caixaB.y
+  );
 }
 
 // === 12) ATUALIZAÇÃO DO JOGO ========================================================
 function atualizar(deltaTempo) {
-  if (jogoTerminado) return;
+  if (jogoTerminado || jogoPausado) return;
 
   // Atualiza explosão
   if (explosao.ativo) {
@@ -338,7 +527,6 @@ function atualizar(deltaTempo) {
       if (jogador.quadroRolagem >= framesRolagem.length) {
         jogador.rolando = false;
         jogador.quadroRolagem = 0;
-        jogador.caixaColisao = { ...jogador.caixaColisaoOriginal };
       }
     }
   }
@@ -362,6 +550,7 @@ function atualizar(deltaTempo) {
 
   // Powerups e efeitos
   atualizarPowerups(deltaTempo);
+  atualizarStatusChefe();
 
   // Lógica do chefe
   atualizarChefe(deltaTempo);
@@ -370,12 +559,12 @@ function atualizar(deltaTempo) {
   tempoObstaculo += deltaTempo;
   tempoMoeda += deltaTempo;
 
-  if (tempoObstaculo > 1500) {
+  if (tempoObstaculo > obterIntervaloObstaculo()) {
     criarObstaculo();
     tempoObstaculo = 0;
   }
 
-  if (tempoMoeda > (chuvaDeMoedasAtiva ? 100 : 400)) {
+  if (tempoMoeda > obterIntervaloMoeda()) {
     criarMoeda();
     tempoMoeda = 0;
   }
@@ -385,19 +574,7 @@ function verificarColisoes() {
   // Colisão com obstáculos
   for (const o of obstaculos) {
     if (!jogador.invencivel && verificarColisao(jogador, o)) {
-      explosao.ativo = true;
-      explosao.quadro = 0;
-      explosao.temporizadorQuadro = 0;
-      explosao.x = jogador.x;
-      explosao.y = jogador.y;
-
-      if (--vidas <= 0) fimDeJogo();
-      else {
-        jogador.invencivel = true;
-        tempoPowerup = 0;
-        tempoPiscar = 0;
-        if (somLigado) somMorte.play();
-      }
+      receberDano();
       break;
     }
   }
@@ -405,10 +582,9 @@ function verificarColisoes() {
   // Colisão com moedas
   for (let i = moedas.length - 1; i >= 0; i--) {
     if (verificarColisao(jogador, moedas[i])) {
-      pontuacao++;
-      textoPontuacao.innerText = `🪙 ${pontuacao}`;
+      registrarMoedaColetada();
       moedas.splice(i, 1);
-      if (somLigado) somMoeda.cloneNode().play();
+      if (somLigado) somMoeda.cloneNode().play().catch(() => {});
 
       if (!chuvaDeMoedasAtiva) {
         moedasParaPowerup++;
@@ -420,9 +596,15 @@ function verificarColisoes() {
 }
 
 function atualizarPowerups(deltaTempo) {
+  if (statusPowerup) {
+    statusPowerup.classList.toggle("hidden", !chuvaDeMoedasAtiva);
+  }
+
   if (jogador.invencivel) {
     tempoPowerup += deltaTempo;
     tempoPiscar += deltaTempo;
+    const progresso = Math.max(0, 1 - tempoPowerup / duracaoPowerup) * 100;
+    statusPowerup?.style.setProperty("--powerup-progress", `${progresso}%`);
 
     if (tempoPiscar > intervaloPiscar) {
       jogador.visivel = !jogador.visivel;
@@ -434,20 +616,24 @@ function atualizarPowerups(deltaTempo) {
       jogador.visivel = true;
       tempoPowerup = 0;
       chuvaDeMoedasAtiva = false;
+      statusPowerup?.classList.add("hidden");
       somTema.playbackRate = 1;
     }
   }
 }
 
 function atualizarChefe(deltaTempo) {
-  if (!chefe.ativo && pontuacao > 0 && pontuacao % 100 === 0) {
-    criarChefe();
+  const tipoChefe = obterTipoChefeDoMarco();
+
+  if (!chefe.ativo && tipoChefe && ultimoMarcoChefe !== pontuacao) {
+    criarChefe(tipoChefe);
+    ultimoMarcoChefe = pontuacao;
   }
 
   if (chefe.ativo) {
     chefe.temporizadorQuadro++;
     if (chefe.temporizadorQuadro >= chefe.atrasoQuadro) {
-      chefe.quadro = (chefe.quadro + 1) % framesChefe.length;
+      chefe.quadro = (chefe.quadro + 1) % chefe.frames.length;
       chefe.temporizadorQuadro = 0;
     }
 
@@ -464,7 +650,7 @@ function atualizarChefe(deltaTempo) {
           chefe.tempoAtaque = 0;
           if (++chefe.contagemAtaques >= chefe.maxAtaques) {
             chefe.estado = "correndo";
-            chefe.velocidadeX = -6;
+            chefe.velocidadeX = chefe.velocidadeAtaque;
           }
         }
         break;
@@ -477,8 +663,10 @@ function atualizarChefe(deltaTempo) {
           !jogador.invencivel &&
           verificarColisao(jogador, chefe)
         ) {
-          const baseJogador = jogador.y + jogador.altura;
-          const topoChefe = chefe.y;
+          const caixaJogador = obterCaixaJogador();
+          const caixaChefe = obterCaixaObjeto(chefe);
+          const baseJogador = caixaJogador.y + caixaJogador.altura;
+          const topoChefe = caixaChefe.y;
 
           if (baseJogador <= topoChefe + 20 && jogador.velocidadeY > 0) {
             // Derrota o chefe
@@ -486,20 +674,24 @@ function atualizarChefe(deltaTempo) {
             chefe.atingiuJogador = true;
             somTema.playbackRate = 1;
             pontuacao += 5;
+            textoPontuacao.innerText = `🪙 ${pontuacao}`;
+            statusChefe?.classList.add("hidden");
             jogador.velocidadeY = FORCA_PULO / 2;
           } else {
             // Jogador toma dano
-            if (--vidas <= 0) fimDeJogo();
-            else {
-              jogador.invencivel = true;
-              tempoPowerup = 0;
-              tempoPiscar = 0;
-              if (somLigado) somMorte.play();
-            }
+            receberDano();
             chefe.atingiuJogador = true;
           }
         }
         break;
+    }
+
+    if (chefe.x + chefe.largura < 0) {
+      chefe.ativo = false;
+      chefe.estado = "parado";
+      chefe.atingiuJogador = false;
+      statusChefe?.classList.add("hidden");
+      somTema.playbackRate = chuvaDeMoedasAtiva ? 1.5 : 1;
     }
   }
 }
@@ -556,7 +748,7 @@ function desenhar() {
 
   // Chefe
   if (chefe.ativo) {
-    const img = framesChefe[chefe.quadro] || chefe.imagem;
+    const img = chefe.frames[chefe.quadro] || chefe.imagem;
     ctx.drawImage(img, chefe.x, chefe.y, chefe.largura, chefe.altura);
   }
 
@@ -571,20 +763,41 @@ function desenhar() {
     );
   }
 
+  if (mostrarHitboxes) desenharHitboxes();
+
   // HUD
   ctx.drawImage(imgRosto, 10, 10, 40, 40);
   textoVidas.innerText = `❤️ x${vidas}`;
 }
 
+function desenharRetanguloHitbox(caixa, cor) {
+  ctx.save();
+  ctx.strokeStyle = cor;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(caixa.x, caixa.y, caixa.largura, caixa.altura);
+  ctx.restore();
+}
+
+function desenharHitboxes() {
+  desenharRetanguloHitbox(obterCaixaJogador(), "#00ff66");
+  obstaculos.forEach((obstaculo) =>
+    desenharRetanguloHitbox(obterCaixaObjeto(obstaculo), "#ff3b3b")
+  );
+  moedas.forEach((moeda) =>
+    desenharRetanguloHitbox(obterCaixaObjeto(moeda), "#ffe04f")
+  );
+  if (chefe.ativo) desenharRetanguloHitbox(obterCaixaObjeto(chefe), "#ff68ff");
+}
+
 function desenharSprite(img, x, y, largura, altura) {
-  if (eMobile) {
-    const proporcao = img.width / img.height;
-    const novaAltura = altura;
-    const novaLargura = novaAltura * proporcao;
-    ctx.drawImage(img, x, y, novaLargura, novaAltura);
-  } else {
-    ctx.drawImage(img, x, y, largura, altura);
-  }
+  const retangulo = calcularRetanguloSprite(img, x, y, largura, altura);
+  ctx.drawImage(
+    img,
+    retangulo.x,
+    retangulo.y,
+    retangulo.largura,
+    retangulo.altura
+  );
 }
 
 // === 14) CONTROLES DO JOGADOR =======================================================
@@ -592,7 +805,7 @@ function pular() {
   if (!jogador.pulando && !jogador.rolando) {
     jogador.velocidadeY = FORCA_PULO;
     jogador.pulando = true;
-    if (somLigado) somPulo.play();
+    tocarAudio(somPulo);
   }
 }
 
@@ -601,12 +814,6 @@ function rolar() {
     jogador.rolando = true;
     jogador.quadroRolagem = 0;
     jogador.temporizadorRolagem = 0;
-    jogador.caixaColisao = {
-      deslocX: 10,
-      deslocY: 40,
-      largura: 45,
-      altura: 35,
-    };
     podeRolar = false;
     setTimeout(() => (podeRolar = true), 300);
   }
@@ -617,32 +824,43 @@ function ativarPowerup() {
   tempoPowerup = 0;
   tempoPiscar = 0;
   chuvaDeMoedasAtiva = true;
-  if (somLigado) somPowerup.play();
+  statusPowerup?.classList.remove("hidden");
+  statusPowerup?.style.setProperty("--powerup-progress", "100%");
+  tocarAudio(somPowerup);
   somTema.playbackRate = 1.5;
+}
+
+function alternarPausa(forcarEstado) {
+  if (jogoTerminado || !telaInicio.classList.contains("hidden")) return;
+
+  jogoPausado = typeof forcarEstado === "boolean" ? forcarEstado : !jogoPausado;
+  telaPausa?.classList.toggle("hidden", !jogoPausado);
+  botaoPausa.innerText = jogoPausado ? "▶ Voltar" : "⏸ Pausa";
+
+  if (jogoPausado) {
+    somTema.pause();
+  } else {
+    ultimoTempo = 0;
+    if (somLigado) iniciarTema();
+  }
 }
 
 // === 15) FIM DE JOGO ================================================================
 async function fimDeJogo() {
   jogoTerminado = true;
-  if (somLigado) somMorte.play();
+  jogoPausado = false;
+  tocarAudio(somMorte);
   somTema.pause();
   textoPontuacaoFinal.innerText = pontuacao;
+  telaPausa?.classList.add("hidden");
+  botaoPausa.innerText = "⏸ Pausa";
+  statusPowerup?.classList.add("hidden");
+  statusChefe?.classList.add("hidden");
   telaFimDeJogo.classList.remove("hidden");
+  esconderFormularioRanking();
 
-  await buscarRanking();
-  const menorNoTop = ranking.length < 5 ? 0 : ranking[ranking.length - 1].score;
-
-  if (pontuacao > menorNoTop || ranking.length < 5) {
-    let nome =
-      prompt("Parabéns! Você entrou no Top 5! Digite seu nome:", "") ||
-      "Anônimo";
-    nome = nome
-      .replace(/[^a-zA-Z0-9À-ÿçÇ ]/g, "")
-      .trim()
-      .substring(0, 12);
-    await adicionarRanking(nome, pontuacao);
-    await buscarRanking();
-  }
+  await buscarRanking(caixaRanking);
+  if (jogadorEntrouNoTop5(pontuacao)) exibirFormularioRanking();
 }
 
 // === 16) INICIALIZAÇÃO DO JOGO ======================================================
@@ -656,6 +874,8 @@ function iniciarJogo() {
   moedas = [];
   moedasParaPowerup = 0;
   jogoTerminado = false;
+  jogoPausado = false;
+  ultimoMarcoChefe = 0;
   deslocChao = 0;
 
   // Reset jogador
@@ -667,14 +887,17 @@ function iniciarJogo() {
     invencivel: false,
     visivel: true,
     quedaRapida: false,
-    caixaColisao: { ...jogador.caixaColisaoOriginal },
   });
 
   // Reset chefe
   Object.assign(chefe, {
+    tipo: "boss",
+    frames: framesChefe,
+    imagem: imgChefeParado,
     x: canvas.width,
     y: CHAO_Y - chefe.altura,
     velocidadeX: 0,
+    velocidadeAtaque: -6,
     estado: "parado",
     ativo: false,
     tempoAtaque: 0,
@@ -687,13 +910,19 @@ function iniciarJogo() {
   // Telas
   telaInicio.classList.add("hidden");
   telaFimDeJogo.classList.add("hidden");
+  telaPausa?.classList.add("hidden");
+  esconderFormularioRanking();
+  statusPowerup?.classList.add("hidden");
+  statusChefe?.classList.add("hidden");
   telaJogo.classList.remove("hidden");
   textoPontuacao.innerText = "🪙 0";
+  botaoPausa.innerText = "⏸ Pausa";
+  if (botaoSomPausa) botaoSomPausa.innerText = somLigado ? "Som: ON" : "Som: OFF";
 
   // Áudio
   somTema.currentTime = 0;
   somTema.playbackRate = 1;
-  somTema.play();
+  iniciarTema();
 
   // Inicia loop
   ultimoTempo = 0;
@@ -716,21 +945,53 @@ function loopDoJogo(carimboTempo) {
 // Botões
 botaoIniciar.addEventListener("click", iniciarJogo);
 botaoReiniciar.addEventListener("click", iniciarJogo);
+botaoPausa.addEventListener("click", () => alternarPausa());
+botaoContinuar.addEventListener("click", () => alternarPausa(false));
+botaoReiniciarPausa.addEventListener("click", iniciarJogo);
+botaoSomPausa.addEventListener("click", () => botaoAlternarSom.click());
+
+formularioRanking?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const nome = limparNomeRanking(campoNomeJogador.value);
+
+  if (!nome) return;
+
+  await adicionarRanking(nome, pontuacao);
+  esconderFormularioRanking();
+  await buscarRanking(caixaRanking);
+});
 
 // Teclado
 window.addEventListener("keydown", (e) => {
-  if (jogoTerminado) return;
-
-  if (e.code === "Space" || e.code === "ArrowUp") pular();
-  if (e.code === "ArrowDown") {
-    if (jogador.pulando) jogador.quedaRapida = true;
-    else rolar();
+  if (["Space", "ArrowUp", "ArrowDown"].includes(e.code)) {
+    e.preventDefault();
   }
+
+  if (e.code === "KeyP") {
+    alternarPausa();
+    return;
+  }
+
+  if (e.code === "KeyH") {
+    mostrarHitboxes = !mostrarHitboxes;
+    return;
+  }
+
   if (
     e.code === "Enter" &&
     (jogoTerminado || !telaInicio.classList.contains("hidden"))
   ) {
     iniciarJogo();
+    return;
+  }
+
+  if (jogoTerminado || !telaInicio.classList.contains("hidden")) return;
+  if (jogoPausado) return;
+
+  if (e.code === "Space" || e.code === "ArrowUp") pular();
+  if (e.code === "ArrowDown") {
+    if (jogador.pulando) jogador.quedaRapida = true;
+    else rolar();
   }
 });
 
@@ -747,7 +1008,14 @@ window.addEventListener("touchend", (e) => {
   toqueFimY = e.changedTouches[0].clientY;
   const dist = toqueInicioY - toqueFimY;
 
-  if (Math.abs(dist) < 30 || jogoTerminado) return;
+  if (
+    Math.abs(dist) < 30 ||
+    jogoTerminado ||
+    jogoPausado ||
+    !telaInicio.classList.contains("hidden")
+  ) {
+    return;
+  }
 
   if (dist > 0) pular();
   else if (jogador.pulando) jogador.quedaRapida = true;
@@ -759,7 +1027,9 @@ document.getElementById("btn-jump")?.addEventListener(
   "touchstart",
   (e) => {
     e.preventDefault();
-    if (!jogoTerminado) pular();
+    if (!jogoTerminado && !jogoPausado && telaInicio.classList.contains("hidden")) {
+      pular();
+    }
   },
   { passive: false }
 );
@@ -768,7 +1038,7 @@ document.getElementById("btn-roll")?.addEventListener(
   "touchstart",
   (e) => {
     e.preventDefault();
-    if (!jogoTerminado) {
+    if (!jogoTerminado && !jogoPausado && telaInicio.classList.contains("hidden")) {
       if (jogador.pulando) jogador.quedaRapida = true;
       else rolar();
     }
@@ -776,17 +1046,34 @@ document.getElementById("btn-roll")?.addEventListener(
   { passive: false }
 );
 
+window.addEventListener("resize", atualizarMidiaResponsiva);
+window.addEventListener("orientationchange", atualizarMidiaResponsiva);
+
 // === 19) FUNÇÕES AUXILIARES =========================================================
-function criarChefe() {
+function criarChefe(tipo = "boss") {
+  const configChefe =
+    tipo === "joe"
+      ? { frames: framesJoe, imagem: framesJoe[0], velocidadeX: -7 }
+      : { frames: framesChefe, imagem: imgChefeParado, velocidadeX: -6 };
+
+  chefe.tipo = tipo;
+  chefe.frames = configChefe.frames;
+  chefe.imagem = configChefe.imagem;
   chefe.ativo = true;
   chefe.estado = "parado";
   chefe.x = canvas.width;
   chefe.y = CHAO_Y - chefe.altura;
   chefe.velocidadeX = 0;
+  chefe.velocidadeAtaque = configChefe.velocidadeX;
   chefe.tempoAtaque = 0;
   chefe.contagemAtaques = 0;
   chefe.quadro = 0;
   chefe.temporizadorQuadro = 0;
   chefe.atingiuJogador = false;
-  somTema.playbackRate = 1.5;
+}
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./service-worker.js").catch(() => {});
+  });
 }

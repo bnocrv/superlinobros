@@ -1,5 +1,14 @@
 {
-  "dependencies": {
-    "firebase": "^12.0.0"
+  "name": "super-lino-bros",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "node --check script.js && node --check js/ranking.js && node --check service-worker.js",
+    "dev": "vite --host 0.0.0.0",
+    "preview": "vite preview --host 0.0.0.0"
+  },
+  "devDependencies": {
+    "vite": "^6.0.0"
   }
 }

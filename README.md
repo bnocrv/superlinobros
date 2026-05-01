@@ -1,92 +1,118 @@
-# Super Lino BROS
+﻿# Super Lino BROS
 
-Super Lino BROS é uma aplicação web no estilo endless runner, desenvolvida com HTML, CSS e JavaScript puro. No jogo, o personagem "Lino" — inspirado em uma figura real do meu ambiente de trabalho — precisa correr e desviar de obstáculos até conseguir chegar em casa com seu salário, antes que as contas o alcancem.  
+Endless runner web feito com HTML, CSS e JavaScript puro, com ranking online no Firebase Firestore, PWA, sprites animados, colisões precisas e interface responsiva inspirada em jogos 8-bit/NES com acabamento moderno.
 
-Esse projeto foi criado com o objetivo de aplicar conhecimentos práticos em lógica de programação, manipulação de DOM, responsividade e integração com backend (Firebase).
-
-[🔗 Jogue agora](https://superlinobros.vercel.app)
-
----
+[🔗 Jogar agora](https://superlinobros.vercel.app)
 
 ![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=flat&logo=html5&logoColor=white)
 ![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=flat&logo=css3&logoColor=white)
 ![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=flat&logo=javascript&logoColor=black)
 ![Firebase](https://img.shields.io/badge/Firebase-FFCA28?style=flat&logo=firebase&logoColor=black)
+![PWA](https://img.shields.io/badge/PWA-5A0FC8?style=flat&logo=pwa&logoColor=white)
 
----
+## Sobre o projeto
 
-## 🕹️ Funcionalidades principais
+O jogador controla o Lino, que precisa correr, coletar moedas e escapar de obstáculos até chegar em casa com o salário antes que as contas o alcancem. O projeto nasceu como estudo prático de lógica e DOM, e foi evoluído com foco em organização, responsividade, experiência de jogo e integração com backend.
 
-- Corrida infinita com obstáculos gerados dinamicamente
-- Velocidade aumenta 0.5 a cada 10 pontos
-- Personagem corre automaticamente
-  - Controles: tecla **espaço** (PC) ou **toque na tela** (mobile)
-- Sons personalizados para:
-  - Pulo
-  - Colisão
-  - Música de fundo
-  - Power-up
-- Sistema de **power-up** ativado a cada 30 pontos
-- Ranking com **Top 5 maiores pontuações**, usando Firebase
-  - Registro de nome ao bater novo recorde
+O objetivo técnico foi construir uma aplicação front-end completa sem framework, explorando canvas, animação, detecção de colisão, gerenciamento de estado, persistência remota e PWA.
 
----
+## Destaques técnicos
 
-# 📷 Screenshot
+- Game loop com `requestAnimationFrame`.
+- Renderização do jogo em `<canvas>`.
+- Controles por teclado, toque e botões mobile.
+- Física simples de pulo, queda rápida e rolagem.
+- Spawn progressivo de moedas e obstáculos.
+- Dois chefes com marcos alternados de aparição.
+- Hitboxes calculadas a partir da área real ocupada pelos sprites.
+- Modo debug com tecla `H` para visualizar colisões.
+- Ranking Top 5 persistido no Firebase Firestore.
+- Formulário de ranking integrado ao Game Over, sem `prompt()` do navegador.
+- PWA com `manifest.json`, ícones e service worker.
+- Layout responsivo para desktop, mobile retrato e mobile paisagem.
+- Tela inicial moderna com inspiração NES/8-bit.
+- Assets grandes convertidos para JPEG para reduzir o carregamento inicial.
 
-<img src="img/screenshot.png" alt="Screenshot do Super Lino BROS" width="600"/>
+## Gameplay
 
----
+- `Espaço` ou `Seta para cima`: pular.
+- `Seta para baixo`: rolar no chão ou acelerar a queda no ar.
+- `P`: pausar/continuar.
+- `H`: mostrar/esconder hitboxes para depuração.
+- Mobile: botões virtuais e gestos de toque.
 
-# 🔥 Ranking
+## Bosses
 
-- Ranking em tempo real, persistido no **Firebase Realtime Database**
-- Apenas scores dentro do Top 5 permitem o cadastro de nome
-- Dados são carregados automaticamente ao iniciar o jogo
+- `Joe`: aparece nos marcos `50`, `150`, `250` e assim por diante.
+- `Tonha`: aparece nos marcos `100`, `200`, `300` e assim por diante.
 
----
+Cada marco dispara apenas uma vez, evitando respawn repetido quando a pontuação permanece no mesmo valor.
 
-# 🧠 Conceitos e tecnologias aplicadas
+## Screenshot
 
-- HTML5 semântico
-- CSS3 para estilização responsiva
-- JavaScript (vanilla) para lógica do jogo e manipulação de DOM
-- Firebase para persistência e leitura de dados em tempo real
-- Controle de fluxo de jogo com `setInterval` e `requestAnimationFrame`
-- Detecção de colisão e controle de física de pulo simples
+<img src="img/screenshot.jpg" alt="Screenshot do Super Lino BROS" width="700" />
 
----
+## Como rodar localmente
 
-# 🧪 Melhorias futuras
+```bash
+npm install
+npm run dev
+```
 
-- Novos power-ups
-- Mais animações, personagens e fases
-- Firebase Authentication para login de jogadores
-- Tela de início mais personalizada/menu pause
+Depois acesse a URL exibida no terminal.
 
----
+Para validar rapidamente a sintaxe dos arquivos principais:
 
-# 👨‍💻 Sobre
+```bash
+npm run check
+```
 
-Esse projeto foi desenvolvido como parte dos meus estudos de ADS (na Afya) e JS (Curso em Vídeo), com o objetivo de praticar lógica de programação, integração com serviços externos e desenvolvimento de uma aplicação completa do zero, com foco em front-end.
+## Estrutura
 
----
+```text
+.
+├── audio/              # Efeitos sonoros e música
+├── img/                # Sprites, cenários, ícones e screenshot
+├── js/ranking.js       # Integração com Firestore e renderização segura do ranking
+├── firebase.js         # Configuração do Firebase
+├── index.html          # Estrutura da interface
+├── manifest.json       # Configuração PWA
+├── script.js           # Loop, estado, física, colisões e gameplay
+├── service-worker.js   # Cache básico e cache sob demanda de assets locais
+└── style.css           # Layout, responsividade e identidade visual
+```
 
-# 📫 Contato
+## Decisões de implementação
+
+- JavaScript vanilla para demonstrar domínio dos fundamentos sem depender de framework.
+- Canvas com resolução lógica fixa para simplificar física e colisões.
+- CSS responsivo para adaptar a moldura do jogo sem alterar a lógica do canvas.
+- Hitboxes proporcionais aos sprites para colisões mais justas.
+- Firestore isolado em `js/ranking.js` para separar persistência do loop principal.
+- `.gitignore` configurado para manter `node_modules` fora do repositório.
+
+## Melhorias recentes
+
+- Reestruturação do repositório e limpeza de arquivos não utilizados.
+- Remoção de `node_modules` do versionamento.
+- Correções no service worker e no PWA.
+- Ranking renderizado com DOM seguro em vez de `innerHTML` com dados externos.
+- Ajustes finos de responsividade desktop/mobile.
+- Tela inicial com estética moderna inspirada em NES/8-bit.
+- Game Over e Pause revisados.
+- Sistema de bosses Joe/Tonha.
+- Otimização de fundos e screenshot.
+
+## Próximos passos
+
+- Modularizar mais partes do `script.js` (`player`, `boss`, `audio`, `input`).
+- Converter `theme.wav` para um formato mais leve quando houver ferramenta de áudio disponível.
+- Adicionar testes automatizados para funções puras de colisão e agenda de bosses.
+- Evoluir a tela de ranking com estados de loading/erro mais visuais.
+
+## Autor
+
+Desenvolvido por Bruno Carvalho como projeto de estudo e portfólio front-end.
 
 - GitHub: [@bnocrv](https://github.com/bnocrv)
 - LinkedIn: [@bnocrv](https://linkedin.com/in/bnocrv)
-
----
-
-# ⚙️ Últimas Atualizações (08/2025)
-- Novos comandos implementados: rolamento | acelerar pouso. 
-- Adversários reformulados
-- Explosão final
-- 1° boss
-- Chuva de moedas 
-- Sistema de vidas 
-- Ativar/desativar som
-
-
-

@@ -18,7 +18,7 @@
     />
 
     <!-- 📱 Ícone para atalhos no celular -->
-    <link rel="apple-touch-icon" href="icons/icon-192.png" />
+    <link rel="apple-touch-icon" href="img/icon-192.png" />
 
     <!-- 🎨 Arquivo de estilos -->
     <link rel="stylesheet" href="style.css" />
@@ -29,17 +29,27 @@
     <div id="gameContainer">
       <!-- 🏁 Tela inicial -->
       <div id="startScreen">
-        <h1>SUPER LINO BROS</h1>
-        <br />
+        <div class="start-badge">8-BIT RUNNER</div>
+        <div class="pixel-cloud cloud-one"></div>
+        <div class="pixel-cloud cloud-two"></div>
+        <div class="coin-orbit coin-one">🪙</div>
+        <div class="coin-orbit coin-two">🪙</div>
+        <h1 data-text="SUPER LINO BROS">SUPER LINO BROS</h1>
+        <p class="nes-subtitle">World 1-1 • Salary Run</p>
         <h2>
           Lino acabou de receber seu salário.<br />
           Ajude-o a chegar em casa antes que as contas acabem com tudo!
         </h2>
-        <br />
-        <h3>Criado por Bruno Carvalho<br />(Em desenvolvimento)</h3>
+        <div class="controls-card" aria-label="Controles do jogo">
+          <span><strong>PC:</strong> Espaço/↑ pula</span>
+          <span><strong>PC:</strong> ↓ rola ou acelera a queda</span>
+          <span><strong>Mobile:</strong> toque/arraste para jogar</span>
+          <span><strong>P:</strong> pausa</span>
+        </div>
+        <h3>© Bruno Carvalho • Press Start</h3>
 
         <!-- ▶️ Botão para iniciar o jogo -->
-        <button id="startButton">Jogar</button>
+        <button id="startButton">Press Start</button>
       </div>
 
       <!-- 🖼️ Área onde o jogo é desenhado -->
@@ -54,10 +64,60 @@
       <!-- 🔊 Botão liga/desliga som -->
       <button id="toggleSound" class="hud-button">🔊 Som</button>
 
+      <!-- ⏸️ Botão de pausa -->
+      <button id="pauseButton" class="hud-button">⏸ Pausa</button>
+
+      <!-- ⚡ Feedback de power-up -->
+      <div id="powerupStatus" class="hidden" aria-live="polite">
+        <span>Chuva de moedas!</span>
+        <div class="powerup-bar"><i></i></div>
+      </div>
+
+      <!-- 👾 Status do chefe -->
+      <div id="bossStatus" class="hidden" aria-live="polite">
+        <span id="bossName">Chefe</span>
+        <div class="boss-bar"><i></i></div>
+      </div>
+
+      <!-- 💥 Flash de dano -->
+      <div id="damageOverlay" class="hidden"></div>
+
+      <!-- ⏸️ Tela de pausa -->
+      <div id="pauseScreen" class="hidden">
+        <h1>Pausado</h1>
+        <p>Pressione <strong>P</strong> ou toque em continuar.</p>
+        <div class="pause-actions">
+          <button id="resumeButton">Continuar</button>
+          <button id="pauseRestartButton">Reiniciar</button>
+          <button id="pauseSoundButton">Som</button>
+        </div>
+      </div>
+
       <!-- 💀 Tela de Game Over -->
       <div id="gameOverScreen" class="hidden">
-        <h1>Game Over</h1>
-        <p>Você fez <span id="finalScore">0</span> pontos!</p>
+        <div class="start-badge">NES RUN COMPLETE</div>
+        <div class="pixel-cloud cloud-one"></div>
+        <div class="pixel-cloud cloud-two"></div>
+        <div class="coin-orbit coin-one">🪙</div>
+        <div class="coin-orbit coin-two">🪙</div>
+        <h1 data-text="Game Over">Game Over</h1>
+        <div class="result-card">
+          <p>Você fez <span id="finalScore">0</span> pontos!</p>
+        </div>
+        <form id="rankingForm" class="hidden">
+          <label for="playerName">Você entrou no Top 5!</label>
+          <div class="ranking-input-row">
+            <input
+              id="playerName"
+              name="playerName"
+              maxlength="12"
+              autocomplete="nickname"
+              placeholder="Seu nome"
+              required
+            />
+            <button type="submit">Salvar</button>
+          </div>
+        </form>
         <div id="highScores"></div>
         <button id="restartButton">Recomeçar</button>
       </div>
