@@ -268,7 +268,7 @@ let pontuacao = 0;
 let moedasParaPowerup = 0;
 let jogoTerminado = false;
 let jogoPausado = false;
-let vidas = 3;
+let vidas = 5;
 let velocidadeJogo = 4;
 let deslocChao = 0;
 let obstaculos = [];
@@ -945,8 +945,8 @@ async function fimDeJogo() {
 function iniciarJogo() {
   // Reset geral
   explosao.ativo = false;
-  pontuacao = 45;
-  vidas = 3;
+  pontuacao = 0;
+  vidas = 5;
   velocidadeJogo = 4;
   obstaculos = [];
   moedas = [];

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'super-lino-bros-v8';
+const CACHE_NAME = 'super-lino-bros-v9';
 const urlsToCache = [
   './',
   './index.html',

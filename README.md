@@ -22,6 +22,7 @@ O objetivo técnico foi construir uma aplicação front-end completa sem framewo
 - Renderização do jogo em `<canvas>`.
 - Controles por teclado, toque e botões mobile.
 - Física simples de pulo, queda rápida e rolagem.
+- Sistema de 5 vidas com feedback visual de dano.
 - Spawn progressivo de moedas e obstáculos.
 - Chefes configuráveis em ciclo de aparição por pontuação.
 - Hitboxes calculadas a partir da área real ocupada pelos sprites.
@@ -40,6 +41,7 @@ O objetivo técnico foi construir uma aplicação front-end completa sem framewo
 - `P`: pausar/continuar.
 - `H`: mostrar/esconder hitboxes para depuração.
 - Mobile: botões virtuais e gestos de toque.
+- O jogador começa cada partida com `5` vidas.
 
 ## Chefes
 
@@ -104,6 +106,7 @@ npm run check
 - Correções no service worker e no PWA.
 - Ranking renderizado com DOM seguro em vez de `innerHTML` com dados externos.
 - Ajustes finos de responsividade desktop/mobile.
+- Balanceamento para partidas com 5 vidas.
 - Tela inicial com estética moderna inspirada em NES/8-bit.
 - Game Over e Pause revisados.
 - Sistema de chefes configurável com David, Rayssa, Ana, Jaime, Camila, Joe, Marcelo, Tonha e Cleyton.
