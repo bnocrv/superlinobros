@@ -42,6 +42,21 @@ const GRAVIDADE = 0.6;
 const GRAVIDADE_QUEDA_RAPIDA = 1.5;
 const FORCA_PULO = -14;
 const CHAO_Y = canvas.height - 70;
+const LARGURA_JOGADOR_DESKTOP = 60;
+const LARGURA_JOGADOR_MOBILE = 68;
+const ALTURA_JOGADOR = 68;
+const AJUSTES_MOBILE = {
+  gravidade: 0.52,
+  gravidadeQuedaRapida: 1.25,
+  forcaPulo: -15.2,
+  velocidadeInicial: 3.35,
+  incrementoVelocidade: 0.35,
+  intervaloObstaculoExtra: 280,
+  intervaloObstaculoMinimo: 1050,
+  reducaoHitboxJogador: 0.16,
+  reducaoHitboxObstaculo: 0.08,
+  vidasIniciais: 6,
+};
 
 // === 4) CARREGAMENTO DE IMAGENS =====================================================
 // Personagem
@@ -219,6 +234,34 @@ const somPowerup = new Audio("audio/powerup.ogg");
 const somMoeda = new Audio("audio/coin.ogg");
 somMoeda.volume = 0.01;
 
+function obterLarguraJogador() {
+  return telaPequena ? LARGURA_JOGADOR_MOBILE : LARGURA_JOGADOR_DESKTOP;
+}
+
+function obterGravidade() {
+  return telaPequena ? AJUSTES_MOBILE.gravidade : GRAVIDADE;
+}
+
+function obterGravidadeQuedaRapida() {
+  return telaPequena ? AJUSTES_MOBILE.gravidadeQuedaRapida : GRAVIDADE_QUEDA_RAPIDA;
+}
+
+function obterForcaPulo() {
+  return telaPequena ? AJUSTES_MOBILE.forcaPulo : FORCA_PULO;
+}
+
+function obterVelocidadeInicial() {
+  return telaPequena ? AJUSTES_MOBILE.velocidadeInicial : 4;
+}
+
+function obterIncrementoVelocidade() {
+  return telaPequena ? AJUSTES_MOBILE.incrementoVelocidade : 0.5;
+}
+
+function obterVidasIniciais() {
+  return telaPequena ? AJUSTES_MOBILE.vidasIniciais : 5;
+}
+
 function tocarAudio(audio) {
   if (!somLigado) return;
   audio.currentTime = 0;
@@ -231,6 +274,13 @@ function iniciarTema() {
 
 function atualizarMidiaResponsiva() {
   telaPequena = window.innerWidth < 768;
+  jogador.largura = obterLarguraJogador();
+  jogador.altura = ALTURA_JOGADOR;
+
+  if (!jogador.pulando) {
+    jogador.y = CHAO_Y - jogador.altura;
+  }
+
   imgFundo.src =
     window.matchMedia("(max-width: 767px) and (orientation: portrait)").matches
       ? "img/fundo_mobile.jpg"
@@ -247,9 +297,9 @@ botaoAlternarSom.addEventListener("click", () => {
 // === 6) ESTADO DO JOGADOR ==========================================================
 const jogador = {
   x: 100,
-  y: CHAO_Y - 80,
-  largura: 120,
-  altura: 65,
+  y: CHAO_Y - ALTURA_JOGADOR,
+  largura: obterLarguraJogador(),
+  altura: ALTURA_JOGADOR,
   velocidadeY: 0,
   pulando: false,
   rolando: false,
@@ -268,8 +318,8 @@ let pontuacao = 0;
 let moedasParaPowerup = 0;
 let jogoTerminado = false;
 let jogoPausado = false;
-let vidas = 5;
-let velocidadeJogo = 4;
+let vidas = obterVidasIniciais();
+let velocidadeJogo = obterVelocidadeInicial();
 let deslocChao = 0;
 let obstaculos = [];
 let moedas = [];
@@ -442,7 +492,10 @@ function criarMoeda() {
 }
 
 function obterIntervaloObstaculo() {
-  return Math.max(850, 1500 - pontuacao * 8);
+  const extraMobile = telaPequena ? AJUSTES_MOBILE.intervaloObstaculoExtra : 0;
+  const minimo = telaPequena ? AJUSTES_MOBILE.intervaloObstaculoMinimo : 850;
+
+  return Math.max(minimo, 1500 + extraMobile - pontuacao * 8);
 }
 
 function obterIntervaloMoeda() {
@@ -472,16 +525,11 @@ function calcularRetanguloSprite(img, x, y, largura, altura) {
     return { x, y, largura, altura };
   }
 
-  const proporcao = img.naturalWidth / img.naturalHeight;
-  const novaAltura = altura;
-  const novaLargura = novaAltura * proporcao;
-  const deslocX = telaPequena ? 0 : (largura - novaLargura) / 2;
-
   return {
-    x: x + deslocX,
+    x,
     y,
-    largura: novaLargura,
-    altura: novaAltura,
+    largura,
+    altura,
   };
 }
 
@@ -526,12 +574,16 @@ function obterCaixaJogador() {
   );
   const limite = caixaRelativa(obterNomeImagem(sprite.img));
 
-  return {
+  const caixa = {
     x: retangulo.x + retangulo.largura * limite.x,
     y: retangulo.y + retangulo.altura * limite.y,
     largura: retangulo.largura * limite.largura,
     altura: retangulo.altura * limite.altura,
   };
+
+  return telaPequena
+    ? reduzirCaixa(caixa, AJUSTES_MOBILE.reducaoHitboxJogador)
+    : caixa;
 }
 
 function obterCaixaObjeto(objeto) {
@@ -549,11 +601,27 @@ function obterCaixaObjeto(objeto) {
 
   const caixa = objeto.caixaColisao || { x: 0, y: 0, largura: 1, altura: 1 };
 
-  return {
+  const caixaObjeto = {
     x: objeto.x + objeto.largura * caixa.x,
     y: objeto.y + objeto.altura * caixa.y,
     largura: objeto.largura * caixa.largura,
     altura: objeto.altura * caixa.altura,
+  };
+
+  return telaPequena && objeto.imagem
+    ? reduzirCaixa(caixaObjeto, AJUSTES_MOBILE.reducaoHitboxObstaculo)
+    : caixaObjeto;
+}
+
+function reduzirCaixa(caixa, percentual) {
+  const reducaoX = caixa.largura * percentual;
+  const reducaoY = caixa.altura * percentual;
+
+  return {
+    x: caixa.x + reducaoX / 2,
+    y: caixa.y + reducaoY / 2,
+    largura: caixa.largura - reducaoX,
+    altura: caixa.altura - reducaoY,
   };
 }
 
@@ -584,7 +652,9 @@ function atualizar(deltaTempo) {
 
   // Física do jogador
   const gravidade =
-    jogador.pulando && jogador.quedaRapida ? GRAVIDADE_QUEDA_RAPIDA : GRAVIDADE;
+    jogador.pulando && jogador.quedaRapida
+      ? obterGravidadeQuedaRapida()
+      : obterGravidade();
 
   jogador.velocidadeY += gravidade;
   jogador.y += jogador.velocidadeY;
@@ -668,7 +738,7 @@ function verificarColisoes() {
 
       if (!chuvaDeMoedasAtiva) {
         moedasParaPowerup++;
-        if (moedasParaPowerup % 10 === 0) velocidadeJogo += 0.5;
+        if (moedasParaPowerup % 10 === 0) velocidadeJogo += obterIncrementoVelocidade();
         if (moedasParaPowerup % 30 === 0) ativarPowerup();
       }
     }
@@ -755,7 +825,7 @@ function atualizarChefe(deltaTempo) {
             pontuacao += 5;
             textoPontuacao.innerText = `🪙 ${pontuacao}`;
             statusChefe?.classList.add("hidden");
-            jogador.velocidadeY = FORCA_PULO / 2;
+            jogador.velocidadeY = obterForcaPulo() / 2;
           } else {
             // Jogador toma dano
             receberDano();
@@ -881,7 +951,7 @@ function desenharSprite(img, x, y, largura, altura) {
 // === 14) CONTROLES DO JOGADOR =======================================================
 function pular() {
   if (!jogador.pulando && !jogador.rolando) {
-    jogador.velocidadeY = FORCA_PULO;
+    jogador.velocidadeY = obterForcaPulo();
     jogador.pulando = true;
     tocarAudio(somPulo);
   }
@@ -946,8 +1016,8 @@ function iniciarJogo() {
   // Reset geral
   explosao.ativo = false;
   pontuacao = 0;
-  vidas = 5;
-  velocidadeJogo = 4;
+  vidas = obterVidasIniciais();
+  velocidadeJogo = obterVelocidadeInicial();
   obstaculos = [];
   moedas = [];
   moedasParaPowerup = 0;
@@ -958,7 +1028,9 @@ function iniciarJogo() {
 
   // Reset jogador
   Object.assign(jogador, {
-    y: CHAO_Y - jogador.altura,
+    largura: obterLarguraJogador(),
+    altura: ALTURA_JOGADOR,
+    y: CHAO_Y - ALTURA_JOGADOR,
     velocidadeY: 0,
     pulando: false,
     rolando: false,

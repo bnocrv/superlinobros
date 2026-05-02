@@ -463,12 +463,12 @@ body {
 /* 📱 Controles para celular */
 #mobile-controls {
   position: absolute;
-  bottom: 10px;
+  bottom: max(16px, env(safe-area-inset-bottom));
   left: 0;
   width: 100%;
   display: flex;
   justify-content: space-between;
-  padding: 0 30px;
+  padding: 0 clamp(22px, 8vw, 46px);
   pointer-events: none; /* Ignora cliques fora dos botões */
   z-index: 10;
   box-sizing: border-box;
@@ -476,8 +476,12 @@ body {
 
 /* 🎮 Botões virtuais de celular */
 #mobile-controls button {
-  font-size: 2rem;
-  padding: 16px 28px;
+  width: clamp(72px, 21vw, 92px);
+  height: clamp(72px, 21vw, 92px);
+  display: grid;
+  place-items: center;
+  font-size: clamp(1.75rem, 7vw, 2.35rem);
+  padding: 0;
   border: 2px solid rgba(255, 255, 255, 0.4);
   border-radius: 50%;
   background-color: rgba(255, 255, 255, 0.2);
